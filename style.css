@@ -64,6 +64,10 @@ section.last {
     margin-bottom: 0em !important;
 }
 
+section p {
+    white-space: pre-line;
+}
+
 .dream {
     color: rgb(200, 204, 208);
     font-style: italic;
@@ -79,6 +83,11 @@ section.last {
 .speech {
     font-style: normal;
     font-weight: 400;
+}
+
+.internal {
+    font-style: normal;
+    font-weight: 300;
 }
 
 .speech:before {
