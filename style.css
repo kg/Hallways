@@ -105,3 +105,29 @@ section p {
 .red {
     color: rgb(205, 25, 45);
 }
+
+.character {
+}
+
+.invisible {
+    opacity: 0 !important;
+}
+
+@keyframes drop-in-fade {
+    from {
+        transform: scale(2.5);
+        opacity: 0.0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1.0;
+    }
+}
+
+.dropInFade {
+    white-space: pre-line;
+    display: inline-block;
+    animation-name: drop-in-fade;
+    animation-duration: 0.175s;
+}
