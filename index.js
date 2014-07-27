@@ -28,7 +28,8 @@ AnimationQueueEntry.prototype.activate = function (onComplete) {
     }
 
     function animationEndHandler () {
-        self.node.removeEventListener("animationend", animationEndHandler, false);
+        self.node.removeEventListener("animationEnd", animationEndHandler, false);
+        self.node.removeEventListener("webkitAnimationEnd", animationEndHandler, false);
 
         if (self.finalClassName !== null)
             self.node.className = self.finalClassName;
@@ -37,7 +38,9 @@ AnimationQueueEntry.prototype.activate = function (onComplete) {
     };
 
     if (self.animationClassName !== null) {
-        self.node.addEventListener("animationend", animationEndHandler, false);
+        self.node.addEventListener("animationEnd", animationEndHandler, false);
+        // fuck chrome
+        self.node.addEventListener("webkitAnimationEnd", animationEndHandler, false);
         self.node.className = self.animationClassName;
     }
 

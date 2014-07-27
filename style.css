@@ -113,6 +113,19 @@ section p {
     opacity: 0 !important;
 }
 
+/* fuck chrome */
+@-webkit-keyframes drop-in-fade {
+    from {
+        transform: scale(2.5);
+        opacity: 0.0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1.0;
+    }
+}
+
 @keyframes drop-in-fade {
     from {
         transform: scale(2.5);
@@ -128,6 +141,8 @@ section p {
 .dropInFade {
     white-space: pre-line;
     display: inline-block;
+    -webkit-animation-name: drop-in-fade;
+    -webkit-animation-duration: 0.175s;
     animation-name: drop-in-fade;
     animation-duration: 0.175s;
 }
