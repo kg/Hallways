@@ -5,7 +5,7 @@ var fastDurationMultiplier = 0.4;
 
 var instantBoundaryHeight = 0;
 var veryFastBoundaryHeight = 100;
-var fastBoundaryHeight = 320;
+var fastBoundaryHeight = 220;
 var bottomBoundaryHeight = 120;
 
 var maxRunQuicklyCount = 3;
