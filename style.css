@@ -140,6 +140,27 @@ story.invisible {
     }
 }
 
+/* fuck chrome */
+@-webkit-keyframes fade-in {
+    from {
+        opacity: 0.0;
+    }
+
+    to {
+        opacity: 1.0;
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0.0;
+    }
+
+    to {
+        opacity: 1.0;
+    }
+}
+
 @keyframes drop-in-fade {
     from {
         transform: scale(2.5);
@@ -157,6 +178,15 @@ character.dropInFade {
     animation-fill-mode: both;
     -webkit-animation-name: drop-in-fade;
     animation-name: drop-in-fade;
+    -webkit-animation-duration: 0.175s;
+    animation-duration: 0.175s;
+}
+
+character.fadeIn {
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
+    -webkit-animation-name: fade-in;
+    animation-name: fade-in;
     -webkit-animation-duration: 0.175s;
     animation-duration: 0.175s;
 }

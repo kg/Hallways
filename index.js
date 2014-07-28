@@ -3,13 +3,19 @@ var whitespaceDuration = 0.072;
 var successiveWhitespaceDuration = 0.024;
 var fastDurationMultiplier = 0.55;
 
+var characterDelays = {
+    ",": 0.15,
+    ".": 0.35,
+    "?": 0.4
+};
+
 var chapterDelay = 2;
 
 var maxRunQuicklyCount = 3;
 
 var instantBoundaryHeight = 0;
-var veryFastBoundaryHeight = 130;
-var fastBoundaryPercentage = 33;
+var veryFastBoundaryHeight = 40;
+var fastBoundaryPercentage = 25;
 var bottomBoundaryHeight = 140;
 var topSpacerPercentage = 15;
 var pauseIndicatorScrollMargin = 220;
@@ -106,7 +112,7 @@ function AnimationQueueEntry (nodes, animationClassName, finalClassName, charact
     this.animationClassName = animationClassName;
     this.finalClassName = finalClassName;
     this.characterPause = characterPause;
-    this.extraDelay = 0;
+    this.extraDelay = null;
     this.isActive = false;
 };
 
@@ -171,7 +177,9 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
 
         applyFinalClass();
 
-        fireOnComplete();
+        if ((self.characterPause === null) && (self.extraDelay === null)) {
+            fireOnComplete();
+        }
     };
 
     // !@&%(*!@)
@@ -231,8 +239,17 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
         result = true;
     }
 
-    if (typeof (self.characterPause) === "number") {
-        var delayMs = ((characterPause * self.nodes.length) + self.extraDelay) * 1000;
+    if (
+        (typeof (self.characterPause) === "number") ||
+        (typeof (self.extraDelay) === "number")
+    ) {
+        var delayMs = 0;
+
+        if (typeof (self.characterPause) === "number")
+            delayMs += (characterPause * self.nodes.length) * 1000;
+
+        if (typeof (self.extraDelay) === "number")
+            delayMs += self.extraDelay * 1000;
 
         delayProvider.runAfterDelay(timeoutHandler, delayMs);
         result = true;
@@ -414,7 +431,7 @@ function trimWhitespace (e) {
 
 function spanifyCharacters (e, animationQueue) {
     var textNodes = enumerateTextNodes(e);
-    var lastPause = null;
+    var lastPause = null, wordAnimation = null;
 
     var isFirstTextNode = true;
 
@@ -465,14 +482,19 @@ function spanifyCharacters (e, animationQueue) {
                     currentWord = document.createElement("word");
                     currentWordNodes = [];
 
-                    animationQueue.enqueue(
-                        currentWordNodes, "dropInFade", null, characterDuration
+                    wordAnimation = animationQueue.enqueue(
+                        currentWordNodes, "fadeIn", null, characterDuration
                     );
                 }
 
                 span.className = "invisible";
                 currentWord.appendChild(span);
                 currentWordNodes.push(span);
+
+                var characterDelay = characterDelays[ch];
+                if (typeof (characterDelay) === "number") {
+                    wordAnimation.extraDelay += characterDelay;
+                }
             }
         }
 
