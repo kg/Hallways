@@ -11,7 +11,6 @@ var maxRunImmediatelyCount = 6;
 
 function DelayProvider () {
     this.runImmediatelyQueue = [];
-    this.backupQueue = [];
     this.runImmediatelyPending = false;
 
     this.boundStep = this.step.bind(this);
@@ -20,8 +19,10 @@ function DelayProvider () {
 DelayProvider.prototype.runImmediately = function (callback) {
     this.runImmediatelyQueue.push(callback);
 
-    if (!this.runImmediatelyPending)
+    if (!this.runImmediatelyPending) {
+        this.runImmediatelyPending = true;
         setTimeout(this.boundStep, 0);
+    }
 };
 
 DelayProvider.prototype.runAfterDelay = function (callback, delayMs) {
@@ -33,18 +34,18 @@ DelayProvider.prototype.runAfterDelay = function (callback, delayMs) {
 
 DelayProvider.prototype.step = function () {
     this.runImmediatelyPending = false;
-    var items = this.runImmediatelyQueue;
 
-    this.runImmediatelyQueue = this.backupQueue;
-    this.runImmediatelyQueue.length = 0;
-
-    this.backupQueue = items;
-
-    for (var i = 0, l = items.length; i < l; i++) {
+    var toRun = Math.min(items.length, maxRunImmediatelyCount);
+    for (var i = 0; i < toRun; i++) {
         items[i]();
     }
 
-    items.length = 0;
+    items.splice(0, toRun);
+
+    if (items.length > 0) {
+        this.runImmediatelyPending = true;
+        setTimeout(this.boundStep, 0);
+    }
 };
 
 
