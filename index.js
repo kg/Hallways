@@ -248,8 +248,12 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
         if (typeof (self.characterPause) === "number")
             delayMs += (characterPause * self.nodes.length) * 1000;
 
-        if (typeof (self.extraDelay) === "number")
-            delayMs += self.extraDelay * 1000;
+        if (typeof (self.extraDelay) === "number") {
+            if (completeFast)
+                delayMs += self.extraDelay * fastDurationMultiplier * 1000;
+            else
+                delayMs += self.extraDelay * 1000;
+        }
 
         delayProvider.runAfterDelay(timeoutHandler, delayMs);
         result = true;
