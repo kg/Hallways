@@ -9,6 +9,13 @@ var characterDelays = {
     "?": 0.4
 };
 
+var animationDurations = {
+    "fade-in": 0.175,
+    "descend-fade-in": 0.175,
+    "drop-in-fade": 0.175,
+    "blurry-fade-in": 0.400
+};
+
 var chapterDelay = 2;
 
 var maxRunQuicklyCount = 3;
@@ -102,14 +109,14 @@ DelayProvider.prototype.stepRunQuickly = function () {
 };
 
 
-function AnimationQueueEntry (nodes, animationClassName, finalClassName, characterPause) {
+function AnimationQueueEntry (nodes, animationName, finalClassName, characterPause) {
     if (!Array.isArray(nodes))
         throw new Error("First argument must be an array of nodes");
 
     this.nodes = nodes;
     this.top = null;
     this.bottom = null;
-    this.animationClassName = animationClassName;
+    this.animationName = animationName;
     this.finalClassName = finalClassName;
     this.characterPause = characterPause;
     this.extraDelay = 0;
@@ -148,8 +155,10 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
             else
                 node.removeAttribute("class");
 
-            node.style.animationDelay = null;
-            node.style.webkitAnimationDelay = null;
+            node.style.webkitAnimationFillMode = node.style.animationFillMode = null;
+            node.style.webkitAnimationDelay = node.style.animationDelay = null;
+            node.style.webkitAnimationDuration = node.style.animationDuration = null;
+            node.style.webkitAnimationName = node.style.animationName = null;
         }
 
     }
@@ -160,7 +169,7 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
 
         completed = true;
 
-        if (self.animationClassName === null) {
+        if (self.animationName === null) {
             applyFinalClass();
         }
 
@@ -206,7 +215,7 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
         return false;
     } else if (completeInstantly || completeVeryFast) {
         // HACK: Don't trigger animation, just set final class now.
-        self.animationClassName = null;
+        self.animationName = null;
 
         if (completeInstantly)
             delayProvider.runImmediately(fireOnComplete);
@@ -218,22 +227,31 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
 
     var result = false;
 
-    if (self.animationClassName !== null) {
+    if (self.animationName !== null) {
         lastNode.addEventListener("animationend", animationEndHandler, false);
         // fuck chrome
         lastNode.addEventListener("webkitAnimationEnd", animationEndHandler, false);
 
-        var actualClassName = completeFast
-            ? self.animationClassName + " animateFast"
-            : self.animationClassName;
-
         var localDelay = 0;
         for (var i = 0, l = self.nodes.length; i < l; i++) {
-            self.nodes[i].style.animationDelay = localDelay.toFixed(4) + "s";
-            self.nodes[i].style.webkitAnimationDelay = localDelay.toFixed(4) + "s";
+            var node = self.nodes[i];
+            var localDuration = animationDurations[self.animationName];
+            if (completeFast)
+                localDuration *= fastDurationMultiplier;
 
-            self.nodes[i].className = actualClassName;
-            localDelay += characterPause;
+            node.className = "";
+            node.style.webkitAnimationFillMode = node.style.animationFillMode = "both";
+            node.style.webkitAnimationDelay = node.style.animationDelay = localDelay.toFixed(4) + "s";
+            node.style.webkitAnimationDuration = node.style.animationDuration = localDuration.toFixed(4) + "s";
+            node.style.webkitAnimationName = node.style.animationName = self.animationName;
+
+            var characterDelay = characterDelays[node.textContent];
+            if (typeof (characterDelay) !== "number")
+                characterDelay = 0;
+            if (completeFast)
+                characterDelay *= fastDurationMultiplier;
+
+            localDelay += characterPause + characterDelay;
         }
 
         result = true;
@@ -275,8 +293,8 @@ function AnimationQueue () {
     this.boundStepComplete = this.stepComplete.bind(this);
 };
 
-AnimationQueue.prototype.enqueue = function (node, animationClassName, finalClassName, characterPause) {
-    var result = new AnimationQueueEntry(node, animationClassName, finalClassName, characterPause);
+AnimationQueue.prototype.enqueue = function (node, animationName, finalClassName, characterPause) {
+    var result = new AnimationQueueEntry(node, animationName, finalClassName, characterPause);
     this.queue.push(result);
     return result;
 };
@@ -484,8 +502,20 @@ function spanifyCharacters (e, animationQueue) {
                     currentWord = document.createElement("word");
                     currentWordNodes = [];
 
+                    var animationName = textNode.parentNode.getAttribute("data-animationName");
+                    try {
+                        if (!animationName)
+                            animationName = textNode.parentNode.parentNode.getAttribute("data-animationName");
+                        if (!animationName)
+                            animationName = textNode.parentNode.parentNode.parentNode.getAttribute("data-animationName");
+                    } catch (exc) {
+                    }
+
+                    if (!animationName)
+                        animationName = "fade-in";
+
                     wordAnimation = animationQueue.enqueue(
-                        currentWordNodes, "fadeIn", null, characterDuration
+                        currentWordNodes, animationName, null, characterDuration
                     );
                 }
 
