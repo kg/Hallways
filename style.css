@@ -66,10 +66,6 @@ section.last {
     margin-bottom: 0em !important;
 }
 
-section p {
-    white-space: pre-line;
-}
-
 .dream {
     color: rgb(200, 204, 208);
     font-style: italic;
@@ -82,46 +78,50 @@ section p {
     font-weight: 300;
 }
 
-.speech {
+span.speech {
     font-style: normal;
     font-weight: 400;
 }
 
-.internal {
+span.internal {
     font-style: normal;
     font-weight: 300;
 }
 
-.speech:before {
+span.speech:before {
     content: "\""
 }
 
-.speech:after {
+span.speech:after {
     content: "\""
 }
 
-.green {
+span.green {
     color: rgb(30, 205, 75);
 }
 
-.red {
+span.red {
     color: rgb(205, 25, 45);
 }
 
-.whitespace {
+section p {
 }
 
-.word {
+span.whitespace {
+    white-space: pre-line;
+}
+
+span.word {
     display: inline-block;
     white-space: nowrap;
 }
 
-.word span {
+span.word span {
     display: inline-block;
-    white-space: pre-line;
+    white-space: nowrap;
 }
 
-.invisible {
+span.invisible, story.invisible {
     opacity: 0 !important;
 }
 
@@ -150,14 +150,14 @@ section p {
     }
 }
 
-.dropInFade {
+span.dropInFade {
     -webkit-animation-name: drop-in-fade;
     animation-name: drop-in-fade;
     -webkit-animation-duration: 0.175s;
     animation-duration: 0.175s;
 }
 
-.animateFast {
+span.animateFast {
     -webkit-animation-duration: 0.075s;
     animation-duration: 0.075s;
 }
