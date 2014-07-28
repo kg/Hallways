@@ -8,9 +8,9 @@ var chapterDelay = 2;
 var maxRunQuicklyCount = 3;
 
 var instantBoundaryHeight = 0;
-var veryFastBoundaryHeight = 150;
-var fastBoundaryPercentage = 37;
-var bottomBoundaryHeight = 120;
+var veryFastBoundaryHeight = 130;
+var fastBoundaryPercentage = 33;
+var bottomBoundaryHeight = 140;
 var topSpacerPercentage = 15;
 var pauseIndicatorScrollMargin = 220;
 
