@@ -12,7 +12,7 @@ var veryFastBoundaryHeight = 130;
 var fastBoundaryPercentage = 45;
 var bottomBoundaryHeight = 120;
 var topSpacerPercentage = 15;
-var pauseIndicatorScrollMargin = 60;
+var pauseIndicatorScrollMargin = 220;
 
 // The fuck, chrome?
 var windowScrollTop = 0;
@@ -193,7 +193,7 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
 
     pausedAtY = null;
     if (suspend) {
-        pausedAtY = self.top;
+        pausedAtY = self.bottom;
 
         return false;
     } else if (completeInstantly || completeVeryFast) {
