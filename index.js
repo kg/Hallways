@@ -1,14 +1,16 @@
-var characterDuration = 0.035;
-var whitespaceDuration = 0.08;
-var successiveWhitespaceDuration = 0.03;
-var fastDurationMultiplier = 0.4;
+var characterDuration = 0.0325;
+var whitespaceDuration = 0.07;
+var successiveWhitespaceDuration = 0.025;
+var fastDurationMultiplier = 0.33;
+
+var chapterDelay = 2;
 
 var instantBoundaryHeight = 0;
 var veryFastBoundaryHeight = 100;
 var fastBoundaryHeight = 220;
 var bottomBoundaryHeight = 120;
 
-var maxRunQuicklyCount = 3;
+var maxRunQuicklyCount = 2;
 
 // The fuck, chrome?
 var windowScrollTop = 0;
@@ -44,7 +46,7 @@ DelayProvider.prototype.runQuickly = function (callback) {
 };
 
 DelayProvider.prototype.runAfterDelay = function (callback, delayMs) {
-    if (delayMs <= 1)
+    if (delayMs <= 2)
         this.runQuickly(callback);
     else
         setTimeout(callback, delayMs);
@@ -149,7 +151,8 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     var completeInstantly = self.top <= instantBoundary;
     var completeVeryFast = self.top <= veryFastBoundary;
     var completeFast = self.top <= fastBoundary;
-    var suspend = (self.bottom) >= suspendBoundary;
+    // FIXME: use self.bottom? Seems too aggressive.
+    var suspend = self.top >= suspendBoundary;
 
     if (suspend) {
         return false;
@@ -227,8 +230,16 @@ AnimationQueue.prototype.step = function () {
 
     entry = this.queue[this.position];
 
+    var pauseIndicator = document.querySelector("pauseindicator");
+
     if (!entry.activate(this.delayProvider, this.boundStepComplete)) {
+        if (pauseIndicator.className !== "paused")
+            pauseIndicator.className = "paused";
+
         window.setTimeout(this.boundStep, 50);
+    } else {
+        if (pauseIndicator.className !== "unpaused")
+            pauseIndicator.className = "unpaused";
     }
 };
 
@@ -243,13 +254,24 @@ AnimationQueue.prototype.start = function () {
 
 
 function onLoad () {
-    var paragraphs = document.querySelectorAll("p");
+    var chapters = document.querySelectorAll("chapter");
     var animationQueue = new AnimationQueue();
 
-    for (var i = 0, l = paragraphs.length; i < l; i++) {
-        var p = paragraphs[i];
+    for (var i = 0, l = chapters.length; i < l; i++) {
+        var chapter = chapters[i];
+        var paragraphs = chapter.querySelectorAll("p");
 
-        spanifyCharacters(p, animationQueue);
+        for (var i2 = 0, l2 = paragraphs.length; i2 < l2; i2++) {
+            var p = paragraphs[i2];
+
+            spanifyCharacters(p, animationQueue);
+        }
+
+        // HACK: Insert delay at end of chapter
+        var lastEntry = animationQueue.queue[animationQueue.queue.length - 1];
+        if (lastEntry) {
+            lastEntry.customDuration += chapterDelay;
+        }
     }
 
     // Chrome is utterly miserable at reading the .scrollY property, so...
