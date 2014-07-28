@@ -115,8 +115,8 @@ whitespace {
 }
 
 word, character {
-    display: inline-block;
     white-space: nowrap;
+    display: inline-block;
 }
 
 character.invisible {
@@ -149,6 +149,8 @@ character.invisible {
 }
 
 character.dropInFade {
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
     -webkit-animation-name: drop-in-fade;
     animation-name: drop-in-fade;
     -webkit-animation-duration: 0.175s;
@@ -175,7 +177,7 @@ pauseindicator {
     position: fixed;
     z-index: 9999;
 
-    bottom: 2.5em;
+    bottom: 2em;
     height: 1.45em;
     width: 18em;
     margin-left: auto;

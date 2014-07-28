@@ -94,23 +94,58 @@ DelayProvider.prototype.stepRunQuickly = function () {
 };
 
 
-function AnimationQueueEntry (node, animationClassName, finalClassName, customDuration) {
-    this.node = node;
+function AnimationQueueEntry (nodes, animationClassName, finalClassName, characterPause) {
+    if (!Array.isArray(nodes))
+        throw new Error("First argument must be an array of nodes");
+
+    this.nodes = nodes;
     this.top = null;
     this.bottom = null;
     this.animationClassName = animationClassName;
     this.finalClassName = finalClassName;
-    this.customDuration = customDuration;
+    this.characterPause = characterPause;
+    this.isActive = false;
 };
 
 AnimationQueueEntry.prototype.measure = function () {
-    this.top = this.node.offsetTop;
-    this.bottom = this.top + this.node.offsetHeight;
+    var top = 999999;
+    var bottom = 0;
+
+    for (var i = 0, l = this.nodes.length; i < l; i++) {
+        var node = this.nodes[i];
+        top = Math.min(top, node.offsetTop);
+        bottom = Math.max(bottom, node.offsetTop + node.offsetHeight);
+    }
+
+    this.top = top;
+    this.bottom = bottom;
 };
 
 AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
+    if (this.isActive)
+        throw new Error("Already active");
+
     var completed = false;
     var self = this;
+
+    var lastNode = self.nodes[self.nodes.length - 1];
+
+    function applyFinalClass () {
+        console.log("applyFinalClass(<" + self.nodes.length + " node(s)>)");
+
+        for (var i2 = 0, l2 = self.nodes.length; i2 < l2; i2++) {
+            var node = self.nodes[i2];
+
+            if (self.finalClassName !== null)
+                node.className = self.finalClassName;
+            else
+                node.removeAttribute("class");
+
+            node.style.animationDelay = null;
+            node.style.webkitAnimationDelay = null;
+        }
+
+    }
 
     function fireOnComplete () {
         if (completed)
@@ -119,10 +154,10 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
         completed = true;
 
         if (self.animationClassName === null) {
-            if (self.finalClassName !== null)
-                self.node.className = self.finalClassName;
+            applyFinalClass();
         }
 
+        console.log("onComplete()");
         onComplete(self);
     }
 
@@ -131,11 +166,12 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     }
 
     function animationEndHandler () {
-        self.node.removeEventListener("animationend", animationEndHandler, false);
-        self.node.removeEventListener("webkitAnimationEnd", animationEndHandler, false);
+        console.log("animationEndHandler()");
 
-        if (self.finalClassName !== null)
-            self.node.className = self.finalClassName;
+        lastNode.removeEventListener("animationend", animationEndHandler, false);
+        lastNode.removeEventListener("webkitAnimationEnd", animationEndHandler, false);
+
+        applyFinalClass();
 
         fireOnComplete();
     };
@@ -152,6 +188,10 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     var completeFast = self.top <= fastBoundary;
     // FIXME: use self.bottom? Seems too aggressive.
     var suspend = self.top >= suspendBoundary;
+
+    var characterPause = self.characterPause;
+    if (completeFast)
+        characterPause * fastDurationMultiplier;
 
     if (suspend) {
         return false;
@@ -170,22 +210,28 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     var result = false;
 
     if (self.animationClassName !== null) {
-        self.node.addEventListener("animationend", animationEndHandler, false);
+        lastNode.addEventListener("animationend", animationEndHandler, false);
         // fuck chrome
-        self.node.addEventListener("webkitAnimationEnd", animationEndHandler, false);
+        lastNode.addEventListener("webkitAnimationEnd", animationEndHandler, false);
 
-        self.node.className = 
-            completeFast
-                ? self.animationClassName + " animateFast"
-                : self.animationClassName;
+        var actualClassName = completeFast
+            ? self.animationClassName + " animateFast"
+            : self.animationClassName;
+
+        var localDelay = 0;
+        for (var i = 0, l = self.nodes.length; i < l; i++) {
+            self.nodes[i].style.animationDelay = localDelay.toFixed(4) + "s";
+            self.nodes[i].style.webkitAnimationDelay = localDelay.toFixed(4) + "s";
+
+            self.nodes[i].className = actualClassName;
+            localDelay += characterPause;
+        }
 
         result = true;
     }
 
-    if (typeof (self.customDuration) === "number") {
-        var delayMs = self.customDuration * 1000;
-        if (completeFast)
-            delayMs *= fastDurationMultiplier;
+    if (typeof (self.characterPause) === "number") {
+        var delayMs = characterPause * self.nodes.length * 1000;
 
         delayProvider.runAfterDelay(timeoutHandler, delayMs);
         result = true;
@@ -194,6 +240,7 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     if (!result)
         throw new Error("Invalid animation queue entry");
 
+    this.isActive = true;
     return result;
 };
 
@@ -208,8 +255,8 @@ function AnimationQueue () {
     this.boundStepComplete = this.stepComplete.bind(this);
 };
 
-AnimationQueue.prototype.enqueue = function (node, animationClassName, finalClassName, customDuration) {
-    var result = new AnimationQueueEntry(node, animationClassName, finalClassName, customDuration);
+AnimationQueue.prototype.enqueue = function (node, animationClassName, finalClassName, characterPause) {
+    var result = new AnimationQueueEntry(node, animationClassName, finalClassName, characterPause);
     this.queue.push(result);
     return result;
 };
@@ -278,7 +325,7 @@ function onLoad () {
         // HACK: Insert delay at end of chapter
         var lastEntry = animationQueue.queue[animationQueue.queue.length - 1];
         if (lastEntry) {
-            lastEntry.customDuration += chapterDelay;
+            lastEntry.characterPause += chapterDelay;
         }
     }
 
@@ -360,6 +407,7 @@ function spanifyCharacters (e, animationQueue) {
 
         var f = document.createDocumentFragment();
         var currentWord = null;
+        var currentWordNodes = null;
         var currentWhitespace = null;
 
         var text = textNode.nodeValue;
@@ -371,6 +419,7 @@ function spanifyCharacters (e, animationQueue) {
                 if (currentWord) {
                     f.appendChild(currentWord);
                     currentWord = null;
+                    currentWordNodes = null;
                 }
 
                 if (currentWhitespace === null) {
@@ -378,12 +427,14 @@ function spanifyCharacters (e, animationQueue) {
                     currentWhitespace.textContent = ch;
 
                     f.appendChild(currentWhitespace);
-                    lastPause = animationQueue.enqueue(currentWhitespace, null, null, whitespaceDuration);
+                    lastPause = animationQueue.enqueue(
+                        [currentWhitespace], null, null, whitespaceDuration
+                    );
 
                 } else {
 
                     currentWhitespace.textContent += ch;
-                    lastPause.customDuration += successiveWhitespaceDuration;
+                    lastPause.characterPause += successiveWhitespaceDuration;
                 }
 
             } else {
@@ -396,12 +447,16 @@ function spanifyCharacters (e, animationQueue) {
 
                 if (currentWord === null) {
                     currentWord = document.createElement("word");
+                    currentWordNodes = [];
+
+                    animationQueue.enqueue(
+                        currentWordNodes, "dropInFade", null, characterDuration
+                    );
                 }
 
                 span.className = "invisible";
-                animationQueue.enqueue(span, "dropInFade", "", characterDuration);
-
                 currentWord.appendChild(span);
+                currentWordNodes.push(span);
             }
         }
 
