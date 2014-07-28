@@ -285,27 +285,45 @@ function spanifyCharacters (e, animationQueue) {
             continue;
 
         var f = document.createDocumentFragment();
+        var currentWord = null;
         for (var v = textNode.nodeValue, l2 = v.length, i2 = 0; i2 < l2; i2++) {
             var ch = v[i2];
+
             var span = document.createElement("span");
             span.textContent = ch;
 
             if (ch.trim().length === 0) {
-                span.className = "character";
+                if (currentWord) {
+                    f.appendChild(currentWord);
+                    currentWord = null;
+                }
+
+                span.className = "whitespace";
 
                 if (lastPause !== null) {
                     lastPause.customDuration += successiveWhitespaceDuration;
                 } else {
                     lastPause = animationQueue.enqueue(span, null, null, whitespaceDuration);
                 }
+
+                f.appendChild(span);
             } else {
+                if (currentWord === null) {
+                    currentWord = document.createElement("span");
+                    currentWord.className = "word";
+                }
+
                 span.className = "character invisible";
                 animationQueue.enqueue(span, "character dropInFade", "character", characterDuration);
                 lastPause = null;
+
+                currentWord.appendChild(span);
             }
 
-            f.appendChild(span);
         }
+
+        if (currentWord)
+            f.appendChild(currentWord);
 
         textNode.parentNode.replaceChild(f, textNode);
     }

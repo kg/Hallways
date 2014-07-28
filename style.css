@@ -108,7 +108,16 @@ section p {
     color: rgb(205, 25, 45);
 }
 
+.whitespace {
+}
+
+.word {
+    display: inline-block;
+    white-space: nowrap;
+}
+
 .character {
+    display: inline-block;
 }
 
 .invisible {
@@ -142,7 +151,6 @@ section p {
 
 .dropInFade {
     white-space: pre-line;
-    display: inline-block;
     -webkit-animation-name: drop-in-fade;
     animation-name: drop-in-fade;
     -webkit-animation-duration: 0.175s;
