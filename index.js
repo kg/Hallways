@@ -18,6 +18,8 @@ var topSpacerHeight = 15;
 var windowScrollTop = 0;
 var windowHeight = 99999;
 
+var animationQueue = null;
+
 function DelayProvider () {
     this.runImmediatelyQueue = [];
     this.runImmediatelyPending = false;
@@ -101,17 +103,12 @@ function AnimationQueueEntry (node, animationClassName, finalClassName, customDu
     this.customDuration = customDuration;
 };
 
-AnimationQueueEntry.prototype.computeDimensions = function () {
-    if (this.top === null)
-        this.top = this.node.offsetTop;
-
-    if (this.bottom === null)
-        this.bottom = this.top + this.node.offsetHeight;
+AnimationQueueEntry.prototype.measure = function () {
+    this.top = this.node.offsetTop;
+    this.bottom = this.top + this.node.offsetHeight;
 };
 
 AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
-    this.computeDimensions();
-
     var completed = false;
     var self = this;
 
@@ -245,19 +242,21 @@ AnimationQueue.prototype.step = function () {
     }
 };
 
-AnimationQueue.prototype.start = function () {
-    // Do layout in advance for the whole queue.
+AnimationQueue.prototype.measure = function () {
     for (var i = 0, l = this.queue.length; i < l; i++) {
-        this.queue[i].computeDimensions();
+        this.queue[i].measure();
     }
+};
 
+AnimationQueue.prototype.start = function () {
     this.step();
 };
 
 
 function onLoad () {
+    animationQueue = new AnimationQueue();
+    
     var chapters = document.querySelectorAll("chapter");
-    var animationQueue = new AnimationQueue();
 
     for (var i = 0, l = chapters.length; i < l; i++) {
         var chapter = chapters[i];
@@ -291,6 +290,8 @@ function onLoad () {
     resizeSpacer();
 
     document.querySelector("story").className = "";
+
+    animationQueue.measure();
     animationQueue.start();
 };
 
@@ -303,6 +304,7 @@ function resizeSpacer () {
     var spacerHeight = (window.innerHeight * topSpacerHeight / 100);
     document.querySelector("topspacer").style.height = spacerHeight.toFixed(1) + "px";
     windowHeight = window.innerHeight;
+    animationQueue.measure();
 };
 
 function enumerateTextNodes (e, output) {
