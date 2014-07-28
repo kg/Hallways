@@ -81,6 +81,11 @@ section.last {
     font-weight: 300;
 }
 
+.typewriter {
+    color: white;
+    font-family: "Fira Sans Mono", "Consolas", monospace;
+}
+
 span.speech {
     font-style: normal;
     font-weight: 400;
@@ -154,7 +159,7 @@ story.invisible {
 /* fuck chrome */
 @-webkit-keyframes descend-fade-in {
     from {
-        transform: translate(0px, -4px);
+        transform: translate(0px, -12px);
         opacity: 0.0;
     }
 
@@ -205,7 +210,7 @@ story.invisible {
 
 @keyframes descend-fade-in {
     from {
-        transform: translate(0px, -4px);
+        transform: translate(0px, -12px);
         opacity: 0.0;
     }
 
