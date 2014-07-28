@@ -10,9 +10,9 @@ var characterDelays = {
 };
 
 var animationDurations = {
-    "fade-in": 0.175,
-    "descend-fade-in": 0.175,
-    "drop-in-fade": 0.175,
+    "fade-in": 0.200,
+    "descend-fade-in": 0.180,
+    "drop-in-fade": 0.180,
     "blurry-fade-in": 0.400
 };
 
