@@ -7,7 +7,7 @@ var chapterDelay = 2;
 
 var instantBoundaryHeight = 0;
 var veryFastBoundaryHeight = 100;
-var fastBoundaryHeight = 220;
+var fastBoundaryHeight = 260;
 var bottomBoundaryHeight = 120;
 
 var maxRunQuicklyCount = 2;
@@ -288,7 +288,7 @@ function onLoad () {
 };
 
 function onScroll () {
-    windowScrollTop = window.scrollY;
+    windowScrollTop = document.querySelector("body").scrollTop;
     windowHeight = window.innerHeight;
 };
 
