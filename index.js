@@ -112,7 +112,7 @@ function AnimationQueueEntry (nodes, animationClassName, finalClassName, charact
     this.animationClassName = animationClassName;
     this.finalClassName = finalClassName;
     this.characterPause = characterPause;
-    this.extraDelay = null;
+    this.extraDelay = 0;
     this.isActive = false;
 };
 
@@ -241,19 +241,17 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
 
     if (
         (typeof (self.characterPause) === "number") ||
-        (typeof (self.extraDelay) === "number")
+        (self.extraDelay > 0)
     ) {
         var delayMs = 0;
 
         if (typeof (self.characterPause) === "number")
             delayMs += (characterPause * self.nodes.length) * 1000;
 
-        if (typeof (self.extraDelay) === "number") {
-            if (completeFast)
-                delayMs += self.extraDelay * fastDurationMultiplier * 1000;
-            else
-                delayMs += self.extraDelay * 1000;
-        }
+        if (completeFast)
+            delayMs += self.extraDelay * fastDurationMultiplier * 1000;
+        else
+            delayMs += self.extraDelay * 1000;
 
         delayProvider.runAfterDelay(timeoutHandler, delayMs);
         result = true;
