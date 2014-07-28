@@ -2,6 +2,9 @@ html, body {
     font-family: 'Fira Sans', 'Cambria', serif;
     font-size: 18pt;
     color: rgb(236, 244, 248);
+}
+
+body, story {
     background-color: rgb(12, 18, 20);
 }
 
@@ -111,17 +114,20 @@ span.whitespace {
     white-space: pre-line;
 }
 
-span.word {
+word {
     display: inline-block;
     white-space: nowrap;
 }
 
-span.word span {
+word.animating span {
     display: inline-block;
+}
+
+word span {
     white-space: nowrap;
 }
 
-span.invisible, story.invisible {
+.invisible {
     opacity: 0 !important;
 }
 

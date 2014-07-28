@@ -396,8 +396,7 @@ function spanifyCharacters (e, animationQueue) {
                 span.textContent = ch;
 
                 if (currentWord === null) {
-                    currentWord = document.createElement("span");
-                    currentWord.className = "word";
+                    currentWord = document.createElement("word");
                 }
 
                 span.className = "invisible";
