@@ -7,7 +7,7 @@ var chapterDelay = 2;
 
 var instantBoundaryHeight = 0;
 var veryFastBoundaryHeight = 100;
-var fastBoundaryHeight = 260;
+var fastBoundaryHeight = 280;
 var bottomBoundaryHeight = 120;
 
 var maxRunQuicklyCount = 2;
@@ -261,12 +261,19 @@ function onLoad () {
 
     for (var i = 0, l = chapters.length; i < l; i++) {
         var chapter = chapters[i];
-        var paragraphs = chapter.querySelectorAll("p");
+        var sections = chapter.querySelectorAll("section");
 
-        for (var i2 = 0, l2 = paragraphs.length; i2 < l2; i2++) {
-            var p = paragraphs[i2];
+        for (var i2 = 0, l2 = sections.length; i2 < l2; i2++) {
+            var section = sections[i2];
+            var paragraphs = section.querySelectorAll("p");
 
-            spanifyCharacters(p, animationQueue);
+            for (var i3 = 0, l3 = paragraphs.length; i3 < l3; i3++) {
+                var p = paragraphs[i3];
+
+                spanifyCharacters(p, animationQueue);
+
+                trimWhitespace(p);
+            }
         }
 
         // HACK: Insert delay at end of chapter
@@ -306,6 +313,21 @@ function enumerateTextNodes (e, output) {
         var child = c[i];
 
         if (child.nodeType === Node.TEXT_NODE) {
+            if (child.nodeValue.length === 0)
+                continue;
+            else if (
+                (
+                    (i === 0) || 
+                    (i === (l - 1))
+                ) &&
+                (child.nodeValue.trim().length === 0)
+            ) {
+                // Don't generate leading/trailing whitespace for paragraphs;
+                //  just whitespace between sentences.
+                // Native browser layout seems to do this anyway.
+                continue;
+            }
+
             output.push(child);
         } else {
             enumerateTextNodes(child, output);
@@ -315,22 +337,33 @@ function enumerateTextNodes (e, output) {
     return output;
 };
 
+function trimWhitespace (e) {
+    if (e.firstChild.className === "whitespace") {
+        e.removeChild(e.firstChild);
+    }
+
+    if (e.lastChild.className === "whitespace") {
+        e.removeChild(e.lastChild);
+    }
+};
+
 function spanifyCharacters (e, animationQueue) {
     var textNodes = enumerateTextNodes(e);
     var lastPause = null;
 
+    var isFirstTextNode = true;
+
     for (var i = 0, l = textNodes.length; i < l; i++) {
         var textNode = textNodes[i];
-        if (textNode.nodeValue.length === 0)
-            continue;
 
         var f = document.createDocumentFragment();
         var currentWord = null;
-        for (var v = textNode.nodeValue, l2 = v.length, i2 = 0; i2 < l2; i2++) {
-            var ch = v[i2];
+        var currentWhitespace = null;
 
-            var span = document.createElement("span");
-            span.textContent = ch;
+        var text = textNode.nodeValue;
+
+        for (var l2 = text.length, i2 = 0; i2 < l2; i2++) {
+            var ch = text[i2];
 
             if (ch.trim().length === 0) {
                 if (currentWord) {
@@ -338,16 +371,28 @@ function spanifyCharacters (e, animationQueue) {
                     currentWord = null;
                 }
 
-                span.className = "whitespace";
+                if (currentWhitespace === null) {
+                    currentWhitespace = document.createElement("span");
+                    currentWhitespace.className = "whitespace";
+                    currentWhitespace.textContent = ch;
 
-                if (lastPause !== null) {
-                    lastPause.customDuration += successiveWhitespaceDuration;
+                    f.appendChild(currentWhitespace);
+                    lastPause = animationQueue.enqueue(currentWhitespace, null, null, whitespaceDuration);
+
                 } else {
-                    lastPause = animationQueue.enqueue(span, null, null, whitespaceDuration);
+
+                    currentWhitespace.textContent += ch;
+                    lastPause.customDuration += successiveWhitespaceDuration;
                 }
 
-                f.appendChild(span);
             } else {
+
+                currentWhitespace = null;
+                lastPause = null;
+
+                var span = document.createElement("span");
+                span.textContent = ch;
+
                 if (currentWord === null) {
                     currentWord = document.createElement("span");
                     currentWord.className = "word";
@@ -355,16 +400,16 @@ function spanifyCharacters (e, animationQueue) {
 
                 span.className = "invisible";
                 animationQueue.enqueue(span, "dropInFade", "", characterDuration);
-                lastPause = null;
 
                 currentWord.appendChild(span);
             }
-
         }
 
         if (currentWord)
             f.appendChild(currentWord);
 
         textNode.parentNode.replaceChild(f, textNode);
+
+        isFirstTextNode = false;
     }
 };
