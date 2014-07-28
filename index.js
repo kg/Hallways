@@ -3,17 +3,22 @@ var whitespaceDuration = 0.08;
 var successiveWhitespaceDuration = 0.03;
 var fastDurationMultiplier = 0.4;
 
-var instantBoundaryHeight = 200;
-var fastBoundaryHeight = 400;
-var bottomBoundaryHeight = 160;
+var instantBoundaryHeight = 0;
+var veryFastBoundaryHeight = 100;
+var fastBoundaryHeight = 320;
+var bottomBoundaryHeight = 120;
 
-var maxRunImmediatelyCount = 6;
+var maxRunQuicklyCount = 3;
 
 function DelayProvider () {
     this.runImmediatelyQueue = [];
     this.runImmediatelyPending = false;
 
-    this.boundStep = this.step.bind(this);
+    this.runQuicklyQueue = [];
+    this.runQuicklyPending = false;
+
+    this.boundStepRunImmediately = this.stepRunImmediately.bind(this);
+    this.boundStepRunQuickly = this.stepRunQuickly.bind(this);
 };
 
 DelayProvider.prototype.runImmediately = function (callback) {
@@ -21,42 +26,84 @@ DelayProvider.prototype.runImmediately = function (callback) {
 
     if (!this.runImmediatelyPending) {
         this.runImmediatelyPending = true;
-        setTimeout(this.boundStep, 0);
+        setTimeout(this.boundStepRunImmediately, 0);
+    }
+};
+
+DelayProvider.prototype.runQuickly = function (callback) {
+    this.runQuicklyQueue.push(callback);
+
+    if (!this.runQuicklyPending) {
+        this.runQuicklyPending = true;
+        setTimeout(this.boundStepRunQuickly, 0);
     }
 };
 
 DelayProvider.prototype.runAfterDelay = function (callback, delayMs) {
     if (delayMs <= 1)
-        this.runImmediately(callback);
+        this.runQuickly(callback);
     else
         setTimeout(callback, delayMs);
 };
 
-DelayProvider.prototype.step = function () {
+DelayProvider.prototype.stepRunImmediately = function () {
     this.runImmediatelyPending = false;
 
-    var toRun = Math.min(items.length, maxRunImmediatelyCount);
-    for (var i = 0; i < toRun; i++) {
-        items[i]();
+    var items = this.runImmediatelyQueue;
+
+    while (items.length > 0) {
+        var toRun = items.length;
+        for (var i = 0; i < toRun; i++) {
+            items[i]();
+        }
+
+        items.splice(0, toRun);
+    }
+};
+
+DelayProvider.prototype.stepRunQuickly = function () {
+    this.runQuicklyPending = false;
+
+    var totalToRun = maxRunQuicklyCount;
+    var items = this.runQuicklyQueue;
+
+    while ((items.length > 0) && (totalToRun > 0)) {
+        var toRun = Math.min(items.length, totalToRun);
+        for (var i = 0; i < toRun; i++) {
+            items[i]();
+        }
+
+        items.splice(0, toRun);
+        totalToRun -= toRun;
     }
 
-    items.splice(0, toRun);
-
     if (items.length > 0) {
-        this.runImmediatelyPending = true;
-        setTimeout(this.boundStep, 0);
+        this.runQuicklyPending = true;
+        setTimeout(this.boundStepRunQuickly, 0);
     }
 };
 
 
 function AnimationQueueEntry (node, animationClassName, finalClassName, customDuration) {
     this.node = node;
+    this.top = null;
+    this.bottom = null;
     this.animationClassName = animationClassName;
     this.finalClassName = finalClassName;
     this.customDuration = customDuration;
 };
 
+AnimationQueueEntry.prototype.computeDimensions = function () {
+    if (this.top === null)
+        this.top = this.node.offsetTop;
+
+    if (this.bottom === null)
+        this.bottom = this.top + this.node.offsetHeight;
+};
+
 AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
+    this.computeDimensions();
+
     var completed = false;
     var self = this;
 
@@ -89,20 +136,26 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     };
 
     var instantBoundary = window.scrollY + instantBoundaryHeight;
+    var veryFastBoundary = window.scrollY + veryFastBoundaryHeight;
     var fastBoundary = window.scrollY + fastBoundaryHeight;
     var suspendBoundary = (window.scrollY + window.innerHeight) - bottomBoundaryHeight;
 
-    var completeInstantly = self.node.offsetTop <= instantBoundary;
-    var completeFast = self.node.offsetTop <= fastBoundary;
-    var suspend = (self.node.offsetTop + self.node.offsetHeight) >= suspendBoundary;
+    var completeInstantly = self.top <= instantBoundary;
+    var completeVeryFast = self.top <= veryFastBoundary;
+    var completeFast = self.top <= fastBoundary;
+    var suspend = (self.bottom) >= suspendBoundary;
 
     if (suspend) {
         return false;
-    } else if (completeInstantly) {
+    } else if (completeInstantly || completeVeryFast) {
         // HACK: Don't trigger animation, just set final class now.
         self.animationClassName = null;
 
-        fireOnComplete();
+        if (completeInstantly)
+            delayProvider.runImmediately(fireOnComplete);
+        else
+            delayProvider.runQuickly(fireOnComplete);
+
         return true;
     }
 
@@ -174,6 +227,11 @@ AnimationQueue.prototype.step = function () {
 };
 
 AnimationQueue.prototype.start = function () {
+    // Do layout in advance for the whole queue.
+    for (var i = 0, l = this.queue.length; i < l; i++) {
+        this.queue[i].computeDimensions();
+    }
+
     this.step();
 };
 
