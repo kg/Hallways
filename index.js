@@ -10,6 +10,10 @@ var bottomBoundaryHeight = 120;
 
 var maxRunQuicklyCount = 3;
 
+// The fuck, chrome?
+var windowScrollTop = 0;
+var windowHeight = 99999;
+
 function DelayProvider () {
     this.runImmediatelyQueue = [];
     this.runImmediatelyPending = false;
@@ -135,10 +139,12 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
         fireOnComplete();
     };
 
-    var instantBoundary = window.scrollY + instantBoundaryHeight;
-    var veryFastBoundary = window.scrollY + veryFastBoundaryHeight;
-    var fastBoundary = window.scrollY + fastBoundaryHeight;
-    var suspendBoundary = (window.scrollY + window.innerHeight) - bottomBoundaryHeight;
+    // !@&%(*!@)
+
+    var instantBoundary = windowScrollTop + instantBoundaryHeight;
+    var veryFastBoundary = windowScrollTop + veryFastBoundaryHeight;
+    var fastBoundary = windowScrollTop + fastBoundaryHeight;
+    var suspendBoundary = (windowScrollTop + windowHeight) - bottomBoundaryHeight;
 
     var completeInstantly = self.top <= instantBoundary;
     var completeVeryFast = self.top <= veryFastBoundary;
@@ -246,6 +252,10 @@ function onLoad () {
         spanifyCharacters(p, animationQueue);
     }
 
+    // Chrome is utterly miserable at reading the .scrollY property, so...
+    window.addEventListener("scroll", onScroll, false);
+    onScroll();
+
     window.addEventListener("resize", resizeSpacer, false);
     resizeSpacer();
 
@@ -253,9 +263,15 @@ function onLoad () {
     animationQueue.start();
 };
 
+function onScroll () {
+    windowScrollTop = window.scrollY;
+    windowHeight = window.innerHeight;
+};
+
 function resizeSpacer () {
     var spacerHeight = (window.innerHeight * 40 / 100);
     document.querySelector("topspacer").style.height = spacerHeight.toFixed(1) + "px";
+    windowHeight = window.innerHeight;
 };
 
 function enumerateTextNodes (e, output) {
