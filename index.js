@@ -1,3 +1,7 @@
+var characterDuration = 0.035;
+var whitespaceDuration = 0.08;
+var successiveWhitespaceDuration = 0.03;
+
 function AnimationQueueEntry (node, animationClassName, finalClassName, customDuration) {
     this.node = node;
     this.animationClassName = animationClassName;
@@ -58,7 +62,9 @@ function AnimationQueue () {
 };
 
 AnimationQueue.prototype.enqueue = function (node, animationClassName, finalClassName, customDuration) {
-    this.queue.push(new AnimationQueueEntry(node, animationClassName, finalClassName, customDuration));
+    var result = new AnimationQueueEntry(node, animationClassName, finalClassName, customDuration);
+    this.queue.push(result);
+    return result;
 };
 
 AnimationQueue.prototype.step = function () {
@@ -110,6 +116,7 @@ function enumerateTextNodes (e, output) {
 
 function spanifyCharacters (e, animationQueue) {
     var textNodes = enumerateTextNodes(e);
+    var lastPause = null;
 
     for (var i = 0, l = textNodes.length; i < l; i++) {
         var textNode = textNodes[i];
@@ -124,10 +131,16 @@ function spanifyCharacters (e, animationQueue) {
 
             if (ch.trim().length === 0) {
                 span.className = "character";
-                animationQueue.enqueue(span, null, null, 0.10);
+
+                if (lastPause !== null) {
+                    lastPause.customDuration += successiveWhitespaceDuration;
+                } else {
+                    lastPause = animationQueue.enqueue(span, null, null, whitespaceDuration);
+                }
             } else {
                 span.className = "character invisible";
-                animationQueue.enqueue(span, "character dropInFade", "character", 0.06);
+                animationQueue.enqueue(span, "character dropInFade", "character", characterDuration);
+                lastPause = null;
             }
 
             f.appendChild(span);
