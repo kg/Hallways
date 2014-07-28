@@ -9,6 +9,8 @@ h1, h2, h3 {
     font-weight: 600;
     text-align: center;
     width: 100%;
+    margin-top: 0px;
+    margin-bottom: 1.5em;
 }
 
 h1 {
@@ -142,7 +144,22 @@ section p {
     white-space: pre-line;
     display: inline-block;
     -webkit-animation-name: drop-in-fade;
-    -webkit-animation-duration: 0.175s;
     animation-name: drop-in-fade;
+    -webkit-animation-duration: 0.175s;
     animation-duration: 0.175s;
+}
+
+.animateFast {
+    -webkit-animation-duration: 0.075s;
+    animation-duration: 0.075s;
+}
+
+topspacer {
+    display: block;
+    width: 100%;
+    min-height: 32px;
+}
+
+story {
+    display: block;
 }

@@ -1,6 +1,52 @@
 var characterDuration = 0.035;
 var whitespaceDuration = 0.08;
 var successiveWhitespaceDuration = 0.03;
+var fastDurationMultiplier = 0.4;
+
+var instantBoundaryHeight = 200;
+var fastBoundaryHeight = 400;
+var bottomBoundaryHeight = 160;
+
+var maxRunImmediatelyCount = 6;
+
+function DelayProvider () {
+    this.runImmediatelyQueue = [];
+    this.backupQueue = [];
+    this.runImmediatelyPending = false;
+
+    this.boundStep = this.step.bind(this);
+};
+
+DelayProvider.prototype.runImmediately = function (callback) {
+    this.runImmediatelyQueue.push(callback);
+
+    if (!this.runImmediatelyPending)
+        setTimeout(this.boundStep, 0);
+};
+
+DelayProvider.prototype.runAfterDelay = function (callback, delayMs) {
+    if (delayMs <= 1)
+        this.runImmediately(callback);
+    else
+        setTimeout(callback, delayMs);
+};
+
+DelayProvider.prototype.step = function () {
+    this.runImmediatelyPending = false;
+    var items = this.runImmediatelyQueue;
+
+    this.runImmediatelyQueue = this.backupQueue;
+    this.runImmediatelyQueue.length = 0;
+
+    this.backupQueue = items;
+
+    for (var i = 0, l = items.length; i < l; i++) {
+        items[i]();
+    }
+
+    items.length = 0;
+};
+
 
 function AnimationQueueEntry (node, animationClassName, finalClassName, customDuration) {
     this.node = node;
@@ -9,7 +55,7 @@ function AnimationQueueEntry (node, animationClassName, finalClassName, customDu
     this.customDuration = customDuration;
 };
 
-AnimationQueueEntry.prototype.activate = function (onComplete) {
+AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     var completed = false;
     var self = this;
 
@@ -21,7 +67,7 @@ AnimationQueueEntry.prototype.activate = function (onComplete) {
 
         if (self.animationClassName === null) {
             if (self.finalClassName !== null)
-                self.node.className = finalClassName;
+                self.node.className = self.finalClassName;
         }
 
         onComplete(self);
@@ -41,24 +87,63 @@ AnimationQueueEntry.prototype.activate = function (onComplete) {
         fireOnComplete();
     };
 
+    var instantBoundary = window.scrollY + instantBoundaryHeight;
+    var fastBoundary = window.scrollY + fastBoundaryHeight;
+    var suspendBoundary = (window.scrollY + window.innerHeight) - bottomBoundaryHeight;
+
+    var completeInstantly = self.node.offsetTop <= instantBoundary;
+    var completeFast = self.node.offsetTop <= fastBoundary;
+    var suspend = (self.node.offsetTop + self.node.offsetHeight) >= suspendBoundary;
+
+    if (suspend) {
+        return false;
+    } else if (completeInstantly) {
+        // HACK: Don't trigger animation, just set final class now.
+        self.animationClassName = null;
+
+        fireOnComplete();
+        return true;
+    }
+
+    var result = false;
+
     if (self.animationClassName !== null) {
         self.node.addEventListener("animationEnd", animationEndHandler, false);
         // fuck chrome
         self.node.addEventListener("webkitAnimationEnd", animationEndHandler, false);
-        self.node.className = self.animationClassName;
+
+        self.node.className = 
+            completeFast
+                ? self.animationClassName + " animateFast"
+                : self.animationClassName;
+
+        result = true;
     }
 
     if (typeof (self.customDuration) === "number") {
-        window.setTimeout(timeoutHandler, self.customDuration * 1000);
+        var delayMs = self.customDuration * 1000;
+        if (completeFast)
+            delayMs *= fastDurationMultiplier;
+
+        delayProvider.runAfterDelay(timeoutHandler, delayMs);
+        result = true;
     }
+
+    if (!result)
+        throw new Error("Invalid animation queue entry");
+
+    return result;
 };
 
 
 function AnimationQueue () {
     this.queue = [];
+    this.position = 0;
     this.onComplete = null;
+    this.delayProvider = new DelayProvider();
 
     this.boundStep = this.step.bind(this);
+    this.boundStepComplete = this.stepComplete.bind(this);
 };
 
 AnimationQueue.prototype.enqueue = function (node, animationClassName, finalClassName, customDuration) {
@@ -67,16 +152,24 @@ AnimationQueue.prototype.enqueue = function (node, animationClassName, finalClas
     return result;
 };
 
+AnimationQueue.prototype.stepComplete = function () {
+    this.position += 1;
+    this.step();
+};
+
 AnimationQueue.prototype.step = function () {
-    if (this.queue.length === 0) {
+    if (this.position >= this.queue.length) {
         if (this.onComplete)
             this.onComplete(this);
 
         return;
     }
 
-    var entry = this.queue.shift();
-    entry.activate(this.boundStep);
+    entry = this.queue[this.position];
+
+    if (!entry.activate(this.delayProvider, this.boundStepComplete)) {
+        window.setTimeout(this.boundStep, 50);
+    }
 };
 
 AnimationQueue.prototype.start = function () {
@@ -94,7 +187,16 @@ function onLoad () {
         spanifyCharacters(p, animationQueue);
     }
 
+    window.addEventListener("resize", resizeSpacer, false);
+    resizeSpacer();
+
+    document.querySelector("story").className = "";
     animationQueue.start();
+};
+
+function resizeSpacer () {
+    var spacerHeight = (window.innerHeight * 40 / 100);
+    document.querySelector("topspacer").style.height = spacerHeight.toFixed(1) + "px";
 };
 
 function enumerateTextNodes (e, output) {
