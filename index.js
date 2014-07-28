@@ -12,6 +12,8 @@ var bottomBoundaryHeight = 120;
 
 var maxRunQuicklyCount = 2;
 
+var topSpacerHeight = 15;
+
 // The fuck, chrome?
 var windowScrollTop = 0;
 var windowHeight = 99999;
@@ -291,7 +293,7 @@ function onScroll () {
 };
 
 function resizeSpacer () {
-    var spacerHeight = (window.innerHeight * 40 / 100);
+    var spacerHeight = (window.innerHeight * topSpacerHeight / 100);
     document.querySelector("topspacer").style.height = spacerHeight.toFixed(1) + "px";
     windowHeight = window.innerHeight;
 };
