@@ -126,7 +126,7 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     }
 
     function animationEndHandler () {
-        self.node.removeEventListener("animationEnd", animationEndHandler, false);
+        self.node.removeEventListener("animationend", animationEndHandler, false);
         self.node.removeEventListener("webkitAnimationEnd", animationEndHandler, false);
 
         if (self.finalClassName !== null)
@@ -162,7 +162,7 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     var result = false;
 
     if (self.animationClassName !== null) {
-        self.node.addEventListener("animationEnd", animationEndHandler, false);
+        self.node.addEventListener("animationend", animationEndHandler, false);
         // fuck chrome
         self.node.addEventListener("webkitAnimationEnd", animationEndHandler, false);
 
@@ -313,8 +313,8 @@ function spanifyCharacters (e, animationQueue) {
                     currentWord.className = "word";
                 }
 
-                span.className = "character invisible";
-                animationQueue.enqueue(span, "character dropInFade", "character", characterDuration);
+                span.className = "invisible";
+                animationQueue.enqueue(span, "dropInFade", "", characterDuration);
                 lastPause = null;
 
                 currentWord.appendChild(span);

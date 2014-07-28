@@ -116,8 +116,7 @@ section p {
     white-space: nowrap;
 }
 
-.character {
-    display: inline-block;
+.word span {
 }
 
 .invisible {
@@ -150,6 +149,7 @@ section p {
 }
 
 .dropInFade {
+    display: inline-block;
     white-space: pre-line;
     -webkit-animation-name: drop-in-fade;
     animation-name: drop-in-fade;
