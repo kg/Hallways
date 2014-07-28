@@ -178,19 +178,15 @@ pauseindicator {
     z-index: 9999;
 
     bottom: 2em;
-    height: 1.45em;
-    width: 18em;
-    margin-left: auto;
-    margin-right: auto;
-    left: 0px;
-    right: 0px;
+    right: 2em;
+    padding: 24px;
 
     background-color: rgba(0, 0, 0, 0.9);
     border-radius: 16px;
     color: white;
     font-weight: bold;
-    font-size: 1.25em;
-    text-align: center;
+    font-size: 1.1em;
+    text-align: right;
 
     -webkit-transition: opacity 0.75s;
     transition: opacity 0.75s;

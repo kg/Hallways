@@ -5,14 +5,14 @@ var fastDurationMultiplier = 0.3;
 
 var chapterDelay = 2;
 
+var maxRunQuicklyCount = 2;
+
 var instantBoundaryHeight = 0;
 var veryFastBoundaryHeight = 130;
 var fastBoundaryPercentage = 45;
 var bottomBoundaryHeight = 120;
-
-var maxRunQuicklyCount = 2;
-
 var topSpacerPercentage = 15;
+var pauseIndicatorScrollMargin = 60;
 
 // The fuck, chrome?
 var windowScrollTop = 0;
@@ -277,7 +277,7 @@ AnimationQueue.prototype.step = function () {
     entry = this.queue[this.position];
 
     if (!entry.activate(this.delayProvider, this.boundStepComplete)) {
-        window.setTimeout(this.boundStep, 50);
+        window.setTimeout(this.boundStep, 250);
     }
 
     updatePauseIndicator();
@@ -348,10 +348,11 @@ function updatePauseIndicator () {
     var indicatorVisible = false;
 
     if (pausedAtY !== null) {
-        indicatorVisible = (windowScrollTop >= (pausedAtY - pauseIndicatorScrollMargin));
+        var boundaryY = (pausedAtY - pauseIndicatorScrollMargin);
+        indicatorVisible = (windowScrollTop + windowHeight) >= boundaryY;
     }
 
-    var expectedClassName = pausedAtY
+    var expectedClassName = indicatorVisible
         ? "paused"
         : "unpaused";
 
