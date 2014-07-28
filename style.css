@@ -49,8 +49,8 @@ chapter {
     border-top-style: solid;
     border-color: rgba(200, 210, 220, 0.15);
 
-    padding-top: 3.25em;
-    padding-bottom: 3.25em;
+    padding-top: 2.1em;
+    padding-bottom: 2.1em;
 }
 
 chapter.first {
@@ -123,6 +123,10 @@ character.invisible {
     opacity: 0 !important;
 }
 
+story.invisible {
+    display: none;
+}
+
 /* fuck chrome */
 @-webkit-keyframes drop-in-fade {
     from {
@@ -158,8 +162,8 @@ character.dropInFade {
 }
 
 character.animateFast {
-    -webkit-animation-duration: 0.05s;
-    animation-duration: 0.05s;
+    -webkit-animation-duration: 0.085s;
+    animation-duration: 0.085s;
 }
 
 topspacer {

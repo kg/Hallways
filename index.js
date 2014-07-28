@@ -1,7 +1,7 @@
 var characterDuration = 0.0325;
 var whitespaceDuration = 0.07;
 var successiveWhitespaceDuration = 0.025;
-var fastDurationMultiplier = 0.3;
+var fastDurationMultiplier = 0.55;
 
 var chapterDelay = 2;
 
@@ -9,7 +9,7 @@ var maxRunQuicklyCount = 2;
 
 var instantBoundaryHeight = 0;
 var veryFastBoundaryHeight = 130;
-var fastBoundaryPercentage = 45;
+var fastBoundaryPercentage = 37;
 var bottomBoundaryHeight = 120;
 var topSpacerPercentage = 15;
 var pauseIndicatorScrollMargin = 220;
