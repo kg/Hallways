@@ -155,10 +155,10 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
             else
                 node.removeAttribute("class");
 
-            node.style.webkitAnimationFillMode = node.style.animationFillMode = null;
-            node.style.webkitAnimationDelay = node.style.animationDelay = null;
-            node.style.webkitAnimationDuration = node.style.animationDuration = null;
-            node.style.webkitAnimationName = node.style.animationName = null;
+            node.style.webkitAnimationFillMode = node.style.animationFillMode = "";
+            node.style.webkitAnimationDelay = node.style.animationDelay = "";
+            node.style.webkitAnimationDuration = node.style.animationDuration = "";
+            node.style.webkitAnimationName = node.style.animationName = "";
         }
 
     }
