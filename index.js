@@ -106,6 +106,7 @@ function AnimationQueueEntry (nodes, animationClassName, finalClassName, charact
     this.animationClassName = animationClassName;
     this.finalClassName = finalClassName;
     this.characterPause = characterPause;
+    this.extraDelay = 0;
     this.isActive = false;
 };
 
@@ -231,7 +232,7 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     }
 
     if (typeof (self.characterPause) === "number") {
-        var delayMs = characterPause * self.nodes.length * 1000;
+        var delayMs = ((characterPause * self.nodes.length) + self.extraDelay) * 1000;
 
         delayProvider.runAfterDelay(timeoutHandler, delayMs);
         result = true;
@@ -319,7 +320,7 @@ function onLoad () {
         // HACK: Insert delay at end of chapter
         var lastEntry = animationQueue.queue[animationQueue.queue.length - 1];
         if (lastEntry) {
-            lastEntry.characterPause += chapterDelay;
+            lastEntry.extraDelay += chapterDelay;
         }
     }
 
@@ -449,7 +450,7 @@ function spanifyCharacters (e, animationQueue) {
                 } else {
 
                     currentWhitespace.textContent += ch;
-                    lastPause.characterPause += successiveWhitespaceDuration;
+                    lastPause.extraDelay += successiveWhitespaceDuration;
                 }
 
             } else {
