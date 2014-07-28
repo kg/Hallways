@@ -158,8 +158,8 @@ character.dropInFade {
 }
 
 character.animateFast {
-    -webkit-animation-duration: 0.075s;
-    animation-duration: 0.075s;
+    -webkit-animation-duration: 0.05s;
+    animation-duration: 0.05s;
 }
 
 topspacer {

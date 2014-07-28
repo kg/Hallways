@@ -1,22 +1,24 @@
 var characterDuration = 0.0325;
 var whitespaceDuration = 0.07;
 var successiveWhitespaceDuration = 0.025;
-var fastDurationMultiplier = 0.33;
+var fastDurationMultiplier = 0.3;
 
 var chapterDelay = 2;
 
 var instantBoundaryHeight = 0;
-var veryFastBoundaryHeight = 100;
-var fastBoundaryHeight = 280;
+var veryFastBoundaryHeight = 130;
+var fastBoundaryPercentage = 45;
 var bottomBoundaryHeight = 120;
 
 var maxRunQuicklyCount = 2;
 
-var topSpacerHeight = 15;
+var topSpacerPercentage = 15;
 
 // The fuck, chrome?
 var windowScrollTop = 0;
 var windowHeight = 99999;
+
+var pausedAtY = null;
 
 var animationQueue = null;
 
@@ -131,8 +133,6 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     var lastNode = self.nodes[self.nodes.length - 1];
 
     function applyFinalClass () {
-        console.log("applyFinalClass(<" + self.nodes.length + " node(s)>)");
-
         for (var i2 = 0, l2 = self.nodes.length; i2 < l2; i2++) {
             var node = self.nodes[i2];
 
@@ -157,7 +157,6 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
             applyFinalClass();
         }
 
-        console.log("onComplete()");
         onComplete(self);
     }
 
@@ -166,8 +165,6 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     }
 
     function animationEndHandler () {
-        console.log("animationEndHandler()");
-
         lastNode.removeEventListener("animationend", animationEndHandler, false);
         lastNode.removeEventListener("webkitAnimationEnd", animationEndHandler, false);
 
@@ -180,7 +177,7 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
 
     var instantBoundary = windowScrollTop + instantBoundaryHeight;
     var veryFastBoundary = windowScrollTop + veryFastBoundaryHeight;
-    var fastBoundary = windowScrollTop + fastBoundaryHeight;
+    var fastBoundary = windowScrollTop + (windowHeight * fastBoundaryPercentage / 100);
     var suspendBoundary = (windowScrollTop + windowHeight) - bottomBoundaryHeight;
 
     var completeInstantly = self.top <= instantBoundary;
@@ -191,9 +188,12 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
 
     var characterPause = self.characterPause;
     if (completeFast)
-        characterPause * fastDurationMultiplier;
+        characterPause *= fastDurationMultiplier;
 
+    pausedAtY = null;
     if (suspend) {
+        pausedAtY = self.top;
+
         return false;
     } else if (completeInstantly || completeVeryFast) {
         // HACK: Don't trigger animation, just set final class now.
@@ -276,17 +276,11 @@ AnimationQueue.prototype.step = function () {
 
     entry = this.queue[this.position];
 
-    var pauseIndicator = document.querySelector("pauseindicator");
-
     if (!entry.activate(this.delayProvider, this.boundStepComplete)) {
-        if (pauseIndicator.className !== "paused")
-            pauseIndicator.className = "paused";
-
         window.setTimeout(this.boundStep, 50);
-    } else {
-        if (pauseIndicator.className !== "unpaused")
-            pauseIndicator.className = "unpaused";
     }
+
+    updatePauseIndicator();
 };
 
 AnimationQueue.prototype.measure = function () {
@@ -345,12 +339,32 @@ function onLoad () {
 function onScroll () {
     windowScrollTop = document.querySelector("body").scrollTop;
     windowHeight = window.innerHeight;
+
+    updatePauseIndicator();
+};
+
+function updatePauseIndicator () {
+    var indicator = document.querySelector("pauseindicator");
+    var indicatorVisible = false;
+
+    if (pausedAtY !== null) {
+        indicatorVisible = (windowScrollTop >= (pausedAtY - pauseIndicatorScrollMargin));
+    }
+
+    var expectedClassName = pausedAtY
+        ? "paused"
+        : "unpaused";
+
+    if (indicator.className !== expectedClassName)
+        indicator.className = expectedClassName;
 };
 
 function resizeSpacer () {
-    var spacerHeight = (window.innerHeight * topSpacerHeight / 100);
-    document.querySelector("topspacer").style.height = spacerHeight.toFixed(1) + "px";
     windowHeight = window.innerHeight;
+
+    var spacerHeight = (windowHeight * topSpacerPercentage / 100);
+    document.querySelector("topspacer").style.height = spacerHeight.toFixed(1) + "px";
+
     animationQueue.measure();
 };
 
