@@ -374,8 +374,7 @@ function spanifyCharacters (e, animationQueue) {
                 }
 
                 if (currentWhitespace === null) {
-                    currentWhitespace = document.createElement("span");
-                    currentWhitespace.className = "whitespace";
+                    currentWhitespace = document.createElement("whitespace");
                     currentWhitespace.textContent = ch;
 
                     f.appendChild(currentWhitespace);
@@ -392,7 +391,7 @@ function spanifyCharacters (e, animationQueue) {
                 currentWhitespace = null;
                 lastPause = null;
 
-                var span = document.createElement("span");
+                var span = document.createElement("character");
                 span.textContent = ch;
 
                 if (currentWord === null) {

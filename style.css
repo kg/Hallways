@@ -110,24 +110,16 @@ span.red {
 section p {
 }
 
-span.whitespace {
+whitespace {
     white-space: pre-line;
 }
 
-word {
+word, character {
     display: inline-block;
     white-space: nowrap;
 }
 
-word.animating span {
-    display: inline-block;
-}
-
-word span {
-    white-space: nowrap;
-}
-
-.invisible {
+character.invisible {
     opacity: 0 !important;
 }
 
@@ -156,14 +148,14 @@ word span {
     }
 }
 
-span.dropInFade {
+character.dropInFade {
     -webkit-animation-name: drop-in-fade;
     animation-name: drop-in-fade;
     -webkit-animation-duration: 0.175s;
     animation-duration: 0.175s;
 }
 
-span.animateFast {
+character.animateFast {
     -webkit-animation-duration: 0.075s;
     animation-duration: 0.075s;
 }
