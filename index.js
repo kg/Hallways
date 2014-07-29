@@ -30,7 +30,7 @@ var pauseIndicatorScrollMargin = 220;
 
 // The fuck, chrome?
 var windowScrollTop = 0;
-var windowHeight = 99999;
+var onResizeTimeout = null;
 
 var pausedAtY = null;
 
@@ -289,14 +289,17 @@ function AnimationQueue () {
     this.position = 0;
     this.onComplete = null;
     this.delayProvider = new DelayProvider();
+    this.isInvalid = true;
 
     this.boundStep = this.step.bind(this);
     this.boundStepComplete = this.stepComplete.bind(this);
+    this.boundMeasure = this.measure.bind(this);
 };
 
 AnimationQueue.prototype.enqueue = function (node, animationName, finalClassName, characterPause) {
     var result = new AnimationQueueEntry(node, animationName, finalClassName, characterPause);
     this.queue.push(result);
+    this.isInvalid = true;
     return result;
 };
 
@@ -315,8 +318,11 @@ AnimationQueue.prototype.step = function () {
 
     entry = this.queue[this.position];
 
-    if (!entry.activate(this.delayProvider, this.boundStepComplete)) {
-        window.setTimeout(this.boundStep, 250);
+    if (
+        this.isInvalid ||
+        !entry.activate(this.delayProvider, this.boundStepComplete)
+    ) {
+        window.setTimeout(this.boundStep, 100);
     }
 
     updatePauseIndicator();
@@ -326,9 +332,14 @@ AnimationQueue.prototype.measure = function () {
     for (var i = 0, l = this.queue.length; i < l; i++) {
         this.queue[i].measure();
     }
+
+    this.isInvalid = false;
 };
 
 AnimationQueue.prototype.start = function () {
+    if (this.isInvalid)
+        throw new Error("measure() must be called first. Queue invalid.");
+
     this.step();
 };
 
@@ -340,8 +351,8 @@ function onLoad () {
     window.addEventListener("scroll", onScroll, false);
     onScroll();
 
-    window.addEventListener("resize", resizeSpacer, false);
-    resizeSpacer();
+    window.addEventListener("resize", onResize, false);
+    onResize();
 
     // Force display: none to suppress layout
     document.querySelector("story").className = "loading";
@@ -465,14 +476,21 @@ function updatePauseIndicator () {
         indicator.className = expectedClassName;
 };
 
-function resizeSpacer () {
+function onResize () {
+    if (onResizeTimeout !== null) {
+        clearTimeout(onResizeTimeout);
+        onResizeTimeout = null;
+    }
+
     windowHeight = window.innerHeight;
 
     var spacerHeight = (windowHeight * topSpacerPercentage / 100);
     document.querySelector("topspacer").style.height = spacerHeight.toFixed(1) + "px";
     document.querySelector("bottomspacer").style.height = spacerHeight.toFixed(1) + "px";
 
-    animationQueue.measure();
+    animationQueue.isInvalid = true;
+
+    onResizeTimeout = setTimeout(animationQueue.boundMeasure, 250);
 };
 
 function enumerateTextNodes (e, output) {
