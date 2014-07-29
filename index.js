@@ -469,6 +469,7 @@ function resizeSpacer () {
 
     var spacerHeight = (windowHeight * topSpacerPercentage / 100);
     document.querySelector("topspacer").style.height = spacerHeight.toFixed(1) + "px";
+    document.querySelector("bottomspacer").style.height = spacerHeight.toFixed(1) + "px";
 
     animationQueue.measure();
 };

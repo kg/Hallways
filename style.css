@@ -238,10 +238,21 @@ character.invisible {
     }
 }
 
-topspacer {
+topspacer, bottomspacer {
     display: block;
     width: 100%;
     min-height: 32px;
+}
+
+footer {
+    display: block;
+    width: 100%;
+    font-size: 0.9em;
+    color: rgb(170, 200, 190);
+    font-style: italic;
+    text-align: center;
+    padding-top: 50px;
+    padding-bottom: 200px;
 }
 
 story {
