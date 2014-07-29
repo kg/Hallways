@@ -91,11 +91,6 @@ span.speech {
     font-weight: 400;
 }
 
-span.internal {
-    font-style: normal;
-    font-weight: 300;
-}
-
 span.speech:before {
     content: "\""
 }
@@ -131,7 +126,20 @@ character.invisible {
 /* fuck chrome */
 @-webkit-keyframes drop-in-fade {
     from {
-        transform: scale(2.5);
+        transform: scale(1.75);
+        opacity: 0.0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1.0;
+    }
+}
+
+/* fuck chrome */
+@-webkit-keyframes rise-fade-in {
+    from {
+        transform: scale(0.3);
         opacity: 0.0;
     }
 
@@ -226,9 +234,21 @@ character.invisible {
     }
 }
 
+@keyframes rise-fade-in {
+    from {
+        transform: scale(0.3);
+        opacity: 0.0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1.0;
+    }
+}
+
 @keyframes drop-in-fade {
     from {
-        transform: scale(2.5);
+        transform: scale(1.75);
         opacity: 0.0;
     }
 

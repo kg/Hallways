@@ -11,9 +11,10 @@ var characterDelays = {
 
 var animationDurations = {
     "fade-in": 0.200,
-    "descend-fade-in": 0.180,
-    "drop-in-fade": 0.180,
-    "blurry-fade-in": 0.400
+    "descend-fade-in": 0.190,
+    "drop-in-fade": 0.190,
+    "rise-fade-in": 0.190,
+    "blurry-fade-in": 0.410
 };
 
 var chapterDelay = 2;
