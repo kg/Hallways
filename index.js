@@ -335,6 +335,24 @@ AnimationQueue.prototype.start = function () {
 function onLoad () {
     animationQueue = new AnimationQueue();
 
+    // Chrome is utterly miserable at reading the .scrollY property, so...
+    window.addEventListener("scroll", onScroll, false);
+    onScroll();
+
+    window.addEventListener("resize", resizeSpacer, false);
+    resizeSpacer();
+
+    // Force display: none to suppress layout
+    document.querySelector("story").className = "loading";
+
+    loadFonts(function () {
+        prepareStory(beginStory)
+    });
+};
+
+function loadFonts (onComplete) {
+    var completed = false;
+
     WebFont.load({
         google: {
             families: ['Lato:400,300italic,300,400italic,700,700italic:latin']
@@ -344,29 +362,37 @@ function onLoad () {
         },
         active: function () {
             console.log("Fonts loaded");
+
+            if (!completed) {
+                completed = true;
+                onComplete();
+            }
         },
         inactive: function () {
             console.log("Could not load fonts");
+            
+            if (!completed) {
+                completed = true;
+                onComplete();
+            }
         }
     });
-
-    // Chrome is utterly miserable at reading the .scrollY property, so...
-    window.addEventListener("scroll", onScroll, false);
-    onScroll();
-
-    window.addEventListener("resize", resizeSpacer, false);
-    resizeSpacer();
-
-    prepareStory();
 };
 
-function prepareStory () {
-    // Force display: none to suppress layout
-    document.querySelector("story").className = "loading";
-
+function prepareStory (onComplete) {
+    console.log("Preparing story layout");
     var chapters = document.querySelectorAll("chapter");
 
-    for (var i = 0, l = chapters.length; i < l; i++) {
+    var i = 0, l = chapters.length;
+
+    function step () {
+        if (i >= l) {
+            finished();
+            return;
+        }
+
+        console.log("Laying out chapter " + i);
+
         var chapter = chapters[i];
         var sections = chapter.querySelectorAll("section");
 
@@ -388,13 +414,22 @@ function prepareStory () {
         if (lastEntry) {
             lastEntry.extraDelay += chapterDelay;
         }
-    }
 
-    // display: block, opacity 0 so we can fade in
-    document.querySelector("story").className = "invisible";
+        i += 1;
 
-    setTimeout(beginStory, 2000);
-    // beginStory();
+        setTimeout(step, 1);
+    };
+
+    function finished () {
+        console.log("Story layout prepared");
+
+        // display: block, opacity 0 so we can fade in
+        document.querySelector("story").className = "invisible";
+
+        setTimeout(onComplete, 100);
+    };
+
+    step();
 };
 
 function beginStory () {
@@ -406,7 +441,7 @@ function beginStory () {
 };
 
 function onScroll () {
-    windowScrollTop = document.querySelector("body").scrollTop;
+    windowScrollTop = window.pageYOffset;
     windowHeight = window.innerHeight;
 
     updatePauseIndicator();
