@@ -1,6 +1,6 @@
 var characterDuration = 0.032;
-var whitespaceDuration = 0.072;
-var successiveWhitespaceDuration = 0.024;
+var whitespaceDuration = 0.065;
+var successiveWhitespaceDuration = 0.03;
 var fastDurationMultiplier = 0.55;
 
 var characterDelays = {
@@ -334,7 +334,36 @@ AnimationQueue.prototype.start = function () {
 
 function onLoad () {
     animationQueue = new AnimationQueue();
-    
+
+    WebFont.load({
+        google: {
+            families: ['Lato:400,300italic,300,400italic,700,700italic:latin']
+        },
+        loading: function () {
+            console.log("Fonts loading");
+        },
+        active: function () {
+            console.log("Fonts loaded");
+        },
+        inactive: function () {
+            console.log("Could not load fonts");
+        }
+    });
+
+    // Chrome is utterly miserable at reading the .scrollY property, so...
+    window.addEventListener("scroll", onScroll, false);
+    onScroll();
+
+    window.addEventListener("resize", resizeSpacer, false);
+    resizeSpacer();
+
+    prepareStory();
+};
+
+function prepareStory () {
+    // Force display: none to suppress layout
+    document.querySelector("story").className = "loading";
+
     var chapters = document.querySelectorAll("chapter");
 
     for (var i = 0, l = chapters.length; i < l; i++) {
@@ -361,14 +390,16 @@ function onLoad () {
         }
     }
 
-    // Chrome is utterly miserable at reading the .scrollY property, so...
-    window.addEventListener("scroll", onScroll, false);
-    onScroll();
+    // display: block, opacity 0 so we can fade in
+    document.querySelector("story").className = "invisible";
 
-    window.addEventListener("resize", resizeSpacer, false);
-    resizeSpacer();
+    setTimeout(beginStory, 2000);
+    // beginStory();
+};
 
+function beginStory () {
     document.querySelector("story").className = "";
+    document.querySelector("loadingindicator").className = "invisible";
 
     animationQueue.measure();
     animationQueue.start();

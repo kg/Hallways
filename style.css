@@ -128,10 +128,6 @@ character.invisible {
     opacity: 0 !important;
 }
 
-story.invisible {
-    display: none;
-}
-
 /* fuck chrome */
 @-webkit-keyframes drop-in-fade {
     from {
@@ -250,6 +246,19 @@ topspacer {
 
 story {
     display: block;
+    opacity: 1;
+
+    -webkit-transition: opacity 1s;
+    transition: opacity 1s;
+}
+
+story.loading {
+    display: none;
+    opacity: 0;
+}
+
+story.invisible {
+    opacity: 0;
 }
 
 pauseindicator {
@@ -268,8 +277,8 @@ pauseindicator {
     font-size: 1.1em;
     text-align: right;
 
-    -webkit-transition: opacity 0.75s;
-    transition: opacity 0.75s;
+    -webkit-transition: opacity 0.66s;
+    transition: opacity 0.66s;
 }
 
 pauseindicator.paused {
@@ -277,6 +286,34 @@ pauseindicator.paused {
 }
 
 pauseindicator.unpaused {
+    opacity: 0;
+}
+
+loadingindicator {
+    display: block;
+    position: fixed;
+    z-index: 9999;
+
+    top: 200px;
+    left: 0px;
+    right: 0px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 20em;
+    padding: 24px;
+
+    background-color: black;
+    border-radius: 16px;
+    color: white;
+    font-weight: bold;
+    font-size: 1.3em;
+    text-align: center;
+
+    -webkit-transition: opacity 1s;
+    transition: opacity 1s;
+}
+
+loadingindicator.invisible {
     opacity: 0;
 }
 
