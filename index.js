@@ -20,7 +20,7 @@ var animationDurations = {
 var chapterDelay = 2;
 
 var maxRunQuicklyCount = 3;
-var periodicCleanupIntervalMs = 250;
+var periodicCleanupIntervalMs = 1000;
 
 var instantBoundaryHeight = 0;
 var veryFastBoundaryHeight = 40;
