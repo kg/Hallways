@@ -111,7 +111,7 @@ DelayProvider.prototype.stepRunQuickly = function () {
 };
 
 
-function AnimationQueueEntry (nodes, animationName, finalClassName, characterPause) {
+function AnimationQueueWordEntry (nodes, animationName, finalClassName, characterPause) {
     if (!Array.isArray(nodes))
         throw new Error("First argument must be an array of nodes");
 
@@ -126,7 +126,7 @@ function AnimationQueueEntry (nodes, animationName, finalClassName, characterPau
     this.wordNode = null;
 };
 
-AnimationQueueEntry.prototype.measure = function () {
+AnimationQueueWordEntry.prototype.measure = function () {
     var firstNode = this.nodes[0];
 
     if (firstNode.nodeName.toLowerCase() === "whitespace") {
@@ -143,12 +143,12 @@ AnimationQueueEntry.prototype.measure = function () {
     this.rectangle = this.wordNode.getBoundingClientRect();
 };
 
-AnimationQueueEntry.prototype.applyWordSize = function () {
+AnimationQueueWordEntry.prototype.applyWordSize = function () {
     this.wordNode.style.width = this.rectangle.width.toFixed(4) + "px";
     this.wordNode.style.height = this.rectangle.height.toFixed(4) + "px";
 };
 
-AnimationQueueEntry.prototype.applyFinalClass = function () {
+AnimationQueueWordEntry.prototype.applyFinalClass = function () {
     for (var i2 = 0, l2 = this.nodes.length; i2 < l2; i2++) {
         var node = this.nodes[i2];
 
@@ -167,7 +167,7 @@ AnimationQueueEntry.prototype.applyFinalClass = function () {
     }
 };
 
-AnimationQueueEntry.prototype.mergeCharacters = function () {
+AnimationQueueWordEntry.prototype.mergeCharacters = function () {
     // Convert into a single word node.
     // Seems to pessimize perf in chrome ;(
     var wordNode = this.nodes[0].parentNode;
@@ -175,7 +175,7 @@ AnimationQueueEntry.prototype.mergeCharacters = function () {
     wordNode.className = "doneAnimating";
 };
 
-AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
+AnimationQueueWordEntry.prototype.activate = function (delayProvider, onComplete) {
     if (this.isActive)
         throw new Error("Already active");
 
@@ -286,6 +286,10 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
 };
 
 
+function AnimationQueueSentenceEntry () {
+};
+
+
 function AnimationQueue () {
     this.queue = [];
     this.position = 0;
@@ -298,8 +302,8 @@ function AnimationQueue () {
     this.boundMeasure = this.measure.bind(this);
 };
 
-AnimationQueue.prototype.enqueue = function (node, animationName, finalClassName, characterPause) {
-    var result = new AnimationQueueEntry(node, animationName, finalClassName, characterPause);
+AnimationQueue.prototype.enqueueWord = function (node, animationName, finalClassName, characterPause) {
+    var result = new AnimationQueueWordEntry(node, animationName, finalClassName, characterPause);
     this.queue.push(result);
     this.isInvalid = true;
     return result;
@@ -578,7 +582,7 @@ function spanifyCharacters (e, animationQueue) {
                     currentWhitespace.textContent = ch;
 
                     f.appendChild(currentWhitespace);
-                    lastPause = animationQueue.enqueue(
+                    lastPause = animationQueue.enqueueWord(
                         [currentWhitespace], null, null, whitespaceDuration
                     );
 
@@ -600,6 +604,7 @@ function spanifyCharacters (e, animationQueue) {
                     currentWord = document.createElement("word");
                     currentWordNodes = [];
 
+                    // HACK: Walk up to 3 nodes to find animation name
                     var animationName = textNode.parentNode.getAttribute("data-animationName");
                     try {
                         if (!animationName)
@@ -612,7 +617,7 @@ function spanifyCharacters (e, animationQueue) {
                     if (!animationName)
                         animationName = "fade-in";
 
-                    wordAnimation = animationQueue.enqueue(
+                    wordAnimation = animationQueue.enqueueWord(
                         currentWordNodes, animationName, null, characterDuration
                     );
                 }
@@ -630,6 +635,25 @@ function spanifyCharacters (e, animationQueue) {
 
         if (currentWord)
             f.appendChild(currentWord);
+
+        if (textNode === textNode.parentNode.lastChild) {
+            // We're on the last text node of a container.
+
+            var annotationContainer = textNode.parentNode;
+
+            var userDelay = annotationContainer.getAttribute("data-advanceDelay");
+
+            if (userDelay !== null) {
+                userDelay = parseFloat(userDelay);
+
+                if (lastPause !== null)
+                    lastPause.extraDelay += userDelay;
+                else if (wordAnimation != null)
+                    wordAnimation.extraDelay += userDelay;
+
+                console.log("Applying user delay of", userDelay, "to", textNode);
+            }
+        }
 
         textNode.parentNode.replaceChild(f, textNode);
 
