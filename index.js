@@ -20,6 +20,7 @@ var animationDurations = {
 var chapterDelay = 2;
 
 var maxRunQuicklyCount = 3;
+var periodicCleanupIntervalMs = 250;
 
 var instantBoundaryHeight = 0;
 var veryFastBoundaryHeight = 40;
@@ -44,8 +45,12 @@ function DelayProvider () {
     this.runQuicklyQueue = [];
     this.runQuicklyPending = false;
 
+    this.periodicCleanupQueue = [];
+    this.periodicCleanupPending = false;
+
     this.boundStepRunImmediately = this.stepRunImmediately.bind(this);
     this.boundStepRunQuickly = this.stepRunQuickly.bind(this);
+    this.boundStepPeriodicCleanup = this.stepPeriodicCleanup.bind(this);
 };
 
 DelayProvider.prototype.runImmediately = function (callback) {
@@ -62,7 +67,16 @@ DelayProvider.prototype.runQuickly = function (callback) {
 
     if (!this.runQuicklyPending) {
         this.runQuicklyPending = true;
-        setTimeout(this.boundStepRunQuickly, 0);
+        setTimeout(this.boundStepRunQuickly, 1);
+    }
+};
+
+DelayProvider.prototype.cleanupEventually = function (callback) {
+    this.periodicCleanupQueue.push(callback);
+
+    if (!this.periodicCleanupPending) {
+        this.periodicCleanupPending = true;
+        setTimeout(this.boundStepPeriodicCleanup, periodicCleanupIntervalMs);
     }
 };
 
@@ -71,6 +85,21 @@ DelayProvider.prototype.runAfterDelay = function (callback, delayMs) {
         this.runQuickly(callback);
     else
         setTimeout(callback, delayMs);
+};
+
+DelayProvider.prototype.stepPeriodicCleanup = function () {
+    this.periodicCleanupPending = false;
+
+    var items = this.periodicCleanupQueue;
+
+    while (items.length > 0) {
+        var toRun = items.length;
+        for (var i = 0; i < toRun; i++) {
+            items[i]();
+        }
+
+        items.splice(0, toRun);
+    }
 };
 
 DelayProvider.prototype.stepRunImmediately = function () {
@@ -124,6 +153,8 @@ function AnimationQueueWordEntry (nodes, animationName, finalClassName, characte
     this.isActive = false;
     this.isWhitespace = false;
     this.wordNode = null;
+
+    this.boundCleanup = this.cleanup.bind(this);
 };
 
 AnimationQueueWordEntry.prototype.measure = function () {
@@ -144,6 +175,10 @@ AnimationQueueWordEntry.prototype.measure = function () {
 };
 
 AnimationQueueWordEntry.prototype.applyWordSize = function () {
+    // No explicit sizing for whitespace. It's not a block anyway.
+    if (this.wordNode.nodeName.toLowerCase() === "whitespace")
+        return;
+
     this.wordNode.style.width = this.rectangle.width.toFixed(4) + "px";
     this.wordNode.style.height = this.rectangle.height.toFixed(4) + "px";
 };
@@ -159,11 +194,6 @@ AnimationQueueWordEntry.prototype.applyFinalClass = function () {
             if (node.className)
                 node.removeAttribute("class");
         }
-
-        node.style.webkitAnimationFillMode = node.style.animationFillMode = "";
-        node.style.webkitAnimationDelay = node.style.animationDelay = "";
-        node.style.webkitAnimationDuration = node.style.animationDuration = "";
-        node.style.webkitAnimationName = node.style.animationName = "";
     }
 };
 
@@ -173,6 +203,29 @@ AnimationQueueWordEntry.prototype.mergeCharacters = function () {
     var wordNode = this.nodes[0].parentNode;
     wordNode.textContent = wordNode.textContent;
     wordNode.className = "doneAnimating";
+};
+
+AnimationQueueWordEntry.prototype.cleanup = function () {
+    // This is necessary in firefox because otherwise our nodes remain layers forever.
+    // SADLY in chrome this forces layout. UGH.
+
+    if (this.animationName === null)
+        return;
+
+    /*
+    // strip animation styles
+    for (var i = 0, l = this.nodes.length; i < l; i++) {
+        var node = this.nodes[i];
+
+        node.style.webkitAnimationName = node.style.animationName = "";
+        node.style.webkitAnimationFillMode = node.style.animationFillMode = "";
+        node.style.webkitAnimationDelay = node.style.animationDelay = "";
+        node.style.webkitAnimationDuration = node.style.animationDuration = "";
+    }
+    */
+
+    // Replace characters with a single text node.
+    this.wordNode.textContent = this.wordNode.textContent;
 };
 
 AnimationQueueWordEntry.prototype.activate = function (delayProvider, onComplete) {
@@ -217,7 +270,7 @@ AnimationQueueWordEntry.prototype.activate = function (delayProvider, onComplete
 
     pausedAtY = null;
     if (suspend) {
-        pausedAtY = self.bottom;
+        pausedAtY = self.rectangle.bottom;
 
         return false;
     } else if (completeInstantly || completeVeryFast) {
@@ -256,6 +309,14 @@ AnimationQueueWordEntry.prototype.activate = function (delayProvider, onComplete
 
             localDelay += characterPause + characterDelay;
         }
+
+        var cleanupCallback = function () {
+            delayProvider.cleanupEventually(self.boundCleanup);
+        };
+
+        lastNode.addEventListener("animationend", cleanupCallback, false);
+        // fuck chrome
+        lastNode.addEventListener("webkitAnimationEnd", cleanupCallback, false);
 
         result = true;
     }

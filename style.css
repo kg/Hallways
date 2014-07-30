@@ -4,7 +4,8 @@ html, body {
     color: rgb(236, 244, 248);
 }
 
-body, story {
+/* repaint/layout optimization: making blocks opaque limits damage from animations/style changes */
+body, story, section, p, word {
     background-color: rgb(12, 18, 20);
 }
 
@@ -119,15 +120,11 @@ word, character {
     display: inline-block;
 }
 
-section, p, word {
-    background-color: black;
-}
-
 character.invisible {
     opacity: 0 !important;
 }
 
-/* fuck chrome */
+/* duplicate keyframes because chrome is the worst. */
 @-webkit-keyframes drop-in-fade {
     from {
         transform: scale(1.75);
@@ -144,7 +141,6 @@ character.invisible {
     }
 }
 
-/* fuck chrome */
 @-webkit-keyframes rise-fade-in {
     from {
         transform: scale(0.3);
@@ -161,7 +157,6 @@ character.invisible {
     }
 }
 
-/* fuck chrome */
 @-webkit-keyframes fade-in {
     from {
         opacity: 0.0;
@@ -172,7 +167,6 @@ character.invisible {
     }
 }
 
-/* fuck chrome */
 @-webkit-keyframes descend-fade-in {
     from {
         transform: translate(0px, -12px);
@@ -189,7 +183,6 @@ character.invisible {
     }
 }
 
-/* fuck chrome */
 @-webkit-keyframes blurry-fade-in {
     from {
         text-shadow: 0px 0px 3px rgba(255, 255, 255, 0);
@@ -209,6 +202,7 @@ character.invisible {
     }
 }
 
+/* FIXME: text-shadow causes layout. ugh. */
 @keyframes blurry-fade-in {
     from {
         text-shadow: 0px 0px 3px rgba(255, 255, 255, 0);
