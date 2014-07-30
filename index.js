@@ -136,6 +136,39 @@ AnimationQueueEntry.prototype.measure = function () {
 
     this.top = top;
     this.bottom = bottom;
+
+    var wordNode = this.nodes[0].parentNode;
+    var wordWidth = wordNode.offsetWidth;
+    var wordHeight = wordNode.offsetHeight;
+
+    wordNode.style.width = wordWidth.toFixed(3) + "px";
+    wordNode.style.height = wordHeight.toFixed(3) + "px";
+};
+
+AnimationQueueEntry.prototype.applyFinalClass = function () {
+    for (var i2 = 0, l2 = this.nodes.length; i2 < l2; i2++) {
+        var node = this.nodes[i2];
+
+        if (this.finalClassName !== null) {
+            if (node.className !== this.finalClassName)
+                node.className = this.finalClassName;
+        } else {
+            if (node.className)
+                node.removeAttribute("class");
+        }
+
+        node.style.webkitAnimationFillMode = node.style.animationFillMode = "";
+        node.style.webkitAnimationDelay = node.style.animationDelay = "";
+        node.style.webkitAnimationDuration = node.style.animationDuration = "";
+        node.style.webkitAnimationName = node.style.animationName = "";
+    }
+};
+
+AnimationQueueEntry.prototype.mergeCharacters = function () {
+    var wordNode = this.nodes[0].parentNode;
+    // Nuke the spans.
+    wordNode.textContent = wordNode.textContent;
+    wordNode.className = "doneAnimating";
 };
 
 AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
@@ -147,23 +180,6 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
 
     var lastNode = self.nodes[self.nodes.length - 1];
 
-    function applyFinalClass () {
-        for (var i2 = 0, l2 = self.nodes.length; i2 < l2; i2++) {
-            var node = self.nodes[i2];
-
-            if (self.finalClassName !== null)
-                node.className = self.finalClassName;
-            else
-                node.removeAttribute("class");
-
-            node.style.webkitAnimationFillMode = node.style.animationFillMode = "";
-            node.style.webkitAnimationDelay = node.style.animationDelay = "";
-            node.style.webkitAnimationDuration = node.style.animationDuration = "";
-            node.style.webkitAnimationName = node.style.animationName = "";
-        }
-
-    }
-
     function fireOnComplete () {
         if (completed)
             return;
@@ -171,21 +187,18 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
         completed = true;
 
         if (self.animationName === null) {
-            applyFinalClass();
+            self.applyFinalClass();
         }
 
         onComplete(self);
-    }
-
-    function timeoutHandler () {
-        fireOnComplete();
     }
 
     function animationEndHandler () {
         lastNode.removeEventListener("animationend", animationEndHandler, false);
         lastNode.removeEventListener("webkitAnimationEnd", animationEndHandler, false);
 
-        applyFinalClass();
+        self.applyFinalClass();
+        self.mergeCharacters();
 
         if ((self.characterPause === null) && (self.extraDelay === null)) {
             fireOnComplete();
@@ -272,7 +285,7 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
         else
             delayMs += self.extraDelay * 1000;
 
-        delayProvider.runAfterDelay(timeoutHandler, delayMs);
+        delayProvider.runAfterDelay(fireOnComplete, delayMs);
         result = true;
     }
 
