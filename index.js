@@ -138,11 +138,16 @@ AnimationQueueEntry.prototype.measure = function () {
     this.bottom = bottom;
 
     var wordNode = this.nodes[0].parentNode;
-    var wordWidth = wordNode.offsetWidth;
-    var wordHeight = wordNode.offsetHeight;
 
-    wordNode.style.width = wordWidth.toFixed(3) + "px";
-    wordNode.style.height = wordHeight.toFixed(3) + "px";
+    this.wordWidth = wordNode.offsetWidth; 
+    this.wordHeight = wordNode.offsetHeight;
+};
+
+AnimationQueueEntry.prototype.applyWordSize = function () {
+    var wordNode = this.nodes[0].parentNode;
+
+    wordNode.style.width = this.wordWidth.toFixed(3) + "px";
+    wordNode.style.height = this.wordHeight.toFixed(3) + "px";
 };
 
 AnimationQueueEntry.prototype.applyFinalClass = function () {
@@ -165,8 +170,9 @@ AnimationQueueEntry.prototype.applyFinalClass = function () {
 };
 
 AnimationQueueEntry.prototype.mergeCharacters = function () {
+    // Convert into a single word node.
+    // Seems to pessimize perf in chrome ;(
     var wordNode = this.nodes[0].parentNode;
-    // Nuke the spans.
     wordNode.textContent = wordNode.textContent;
     wordNode.className = "doneAnimating";
 };
@@ -198,7 +204,7 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
         lastNode.removeEventListener("webkitAnimationEnd", animationEndHandler, false);
 
         self.applyFinalClass();
-        self.mergeCharacters();
+        // self.mergeCharacters();
 
         if ((self.characterPause === null) && (self.extraDelay === null)) {
             fireOnComplete();
@@ -342,8 +348,14 @@ AnimationQueue.prototype.step = function () {
 };
 
 AnimationQueue.prototype.measure = function () {
+    // Measure all the characters/words
     for (var i = 0, l = this.queue.length; i < l; i++) {
         this.queue[i].measure();
+    }
+
+    // Apply fixed sizes to all the words now.
+    for (var i = 0, l = this.queue.length; i < l; i++) {
+        this.queue[i].applyWordSize();
     }
 
     this.isInvalid = false;
