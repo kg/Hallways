@@ -143,14 +143,14 @@ DelayProvider.prototype.stepRunQuickly = function () {
 };
 
 
-function AnimationQueueWordEntry (nodes, animationName, finalClassName, characterPause) {
+function AnimationQueueWordEntry (nodes, animationName, characterPause) {
     if (!Array.isArray(nodes))
         throw new Error("First argument must be an array of nodes");
 
     this.nodes = nodes;
     this.rectangle = null;
+    this.rectangleYOffset = 0;
     this.animationName = animationName;
-    this.finalClassName = finalClassName;
     this.characterPause = characterPause;
     this.extraDelay = 0;
     this.isActive = false;
@@ -175,6 +175,7 @@ AnimationQueueWordEntry.prototype.measure = function () {
     }
 
     this.rectangle = this.wordNode.getBoundingClientRect();
+    this.rectangleYOffset = windowScrollTop;
 };
 
 AnimationQueueWordEntry.prototype.applyWordSize = function () {
@@ -184,28 +185,6 @@ AnimationQueueWordEntry.prototype.applyWordSize = function () {
 
     this.wordNode.style.width = this.rectangle.width.toFixed(4) + "px";
     this.wordNode.style.height = this.rectangle.height.toFixed(4) + "px";
-};
-
-AnimationQueueWordEntry.prototype.applyFinalClass = function () {
-    for (var i2 = 0, l2 = this.nodes.length; i2 < l2; i2++) {
-        var node = this.nodes[i2];
-
-        if (this.finalClassName !== null) {
-            if (node.className !== this.finalClassName)
-                node.className = this.finalClassName;
-        } else {
-            if (node.className)
-                node.removeAttribute("class");
-        }
-    }
-};
-
-AnimationQueueWordEntry.prototype.mergeCharacters = function () {
-    // Convert into a single word node.
-    // Seems to pessimize perf in chrome ;(
-    var wordNode = this.nodes[0].parentNode;
-    wordNode.textContent = wordNode.textContent;
-    wordNode.className = "doneAnimating";
 };
 
 AnimationQueueWordEntry.prototype.cleanup = function () {
@@ -248,11 +227,6 @@ AnimationQueueWordEntry.prototype.activate = function (delayProvider, onComplete
             return;
 
         completed = true;
-
-        if (self.animationName === null) {
-            self.applyFinalClass();
-        }
-
         onComplete(self);
     }
 
@@ -263,7 +237,7 @@ AnimationQueueWordEntry.prototype.activate = function (delayProvider, onComplete
     var fastBoundary = windowScrollTop + (windowHeight * fastBoundaryPercentage / 100);
     var suspendBoundary = (windowScrollTop + windowHeight) - bottomBoundaryHeight;
 
-    var top = self.rectangle.top;
+    var top = self.rectangle.top + self.rectangleYOffset;
     var completeInstantly = top <= instantBoundary;
     var completeVeryFast = top <= veryFastBoundary;
     var completeFast = top <= fastBoundary;
@@ -276,17 +250,23 @@ AnimationQueueWordEntry.prototype.activate = function (delayProvider, onComplete
 
     pausedAtY = null;
     if (suspend) {
-        pausedAtY = self.rectangle.bottom;
+        pausedAtY = self.rectangle.bottom + self.rectangleYOffset;
 
         return false;
     } else if (completeInstantly || completeVeryFast) {
-        // HACK: Don't trigger animation, just set final class now.
-        self.animationName = null;
+        function reveal () {
+            for (var i = 0, l = self.nodes.length; i < l; i++) {
+                var node = self.nodes[i];
+                node.removeAttribute("class");
+            }
+
+            fireOnComplete();
+        }
 
         if (completeInstantly)
-            delayProvider.runImmediately(fireOnComplete);
+            delayProvider.runImmediately(reveal);
         else
-            delayProvider.runQuickly(fireOnComplete);
+            delayProvider.runQuickly(reveal);
 
         return true;
     }
@@ -295,13 +275,14 @@ AnimationQueueWordEntry.prototype.activate = function (delayProvider, onComplete
 
     if ((self.animationName !== null) && !this.isWhitespace) {
         var localDelay = 0;
+
         for (var i = 0, l = self.nodes.length; i < l; i++) {
             var node = self.nodes[i];
             var localDuration = animationDurations[self.animationName];
             if (completeFast)
                 localDuration *= fastDurationMultiplier;
 
-            node.className = "";
+            node.removeAttribute("class");
             node.style.webkitAnimationFillMode = node.style.animationFillMode = "both";
             node.style.webkitAnimationDelay = node.style.animationDelay = localDelay.toFixed(4) + "s";
             node.style.webkitAnimationDuration = node.style.animationDuration = localDuration.toFixed(4) + "s";
@@ -369,8 +350,8 @@ function AnimationQueue () {
     this.boundMeasure = this.measure.bind(this);
 };
 
-AnimationQueue.prototype.enqueueWord = function (node, animationName, finalClassName, characterPause) {
-    var result = new AnimationQueueWordEntry(node, animationName, finalClassName, characterPause);
+AnimationQueue.prototype.enqueueWord = function (node, animationName, characterPause) {
+    var result = new AnimationQueueWordEntry(node, animationName, characterPause);
     this.queue.push(result);
     this.isInvalid = true;
     return result;
@@ -389,6 +370,14 @@ AnimationQueue.prototype.step = function () {
         return;
     }
 
+    // cache these.
+    if (typeof (window.scrollY) === "number")
+        windowScrollTop = window.scrollY;
+    else
+        windowScrollTop = window.pageYOffset;
+
+    windowHeight = window.innerHeight;
+
     entry = this.queue[this.position];
 
     if (
@@ -402,6 +391,14 @@ AnimationQueue.prototype.step = function () {
 };
 
 AnimationQueue.prototype.measure = function () {
+    // cache these.
+    if (typeof (window.scrollY) === "number")
+        windowScrollTop = window.scrollY;
+    else
+        windowScrollTop = window.pageYOffset;
+
+    windowHeight = window.innerHeight;
+
     // Measure all the characters/words
     for (var i = 0, l = this.queue.length; i < l; i++) {
         this.queue[i].measure();
@@ -425,10 +422,6 @@ AnimationQueue.prototype.start = function () {
 
 function onLoad () {
     animationQueue = new AnimationQueue();
-
-    // Chrome is utterly miserable at reading the .scrollY property, so...
-    window.addEventListener("scroll", onScroll, false);
-    onScroll();
 
     window.addEventListener("resize", onResize, false);
     onResize();
@@ -531,13 +524,6 @@ function beginStory () {
 
     animationQueue.measure();
     animationQueue.start();
-};
-
-function onScroll () {
-    windowScrollTop = window.pageYOffset;
-    windowHeight = window.innerHeight;
-
-    updatePauseIndicator();
 };
 
 function updatePauseIndicator () {
@@ -650,7 +636,7 @@ function spanifyCharacters (e, animationQueue) {
 
                     f.appendChild(currentWhitespace);
                     lastPause = animationQueue.enqueueWord(
-                        [currentWhitespace], null, null, whitespaceDuration
+                        [currentWhitespace], null, whitespaceDuration
                     );
 
                 } else {
@@ -685,7 +671,7 @@ function spanifyCharacters (e, animationQueue) {
                         animationName = "fade-in";
 
                     wordAnimation = animationQueue.enqueueWord(
-                        currentWordNodes, animationName, null, characterDuration
+                        currentWordNodes, animationName, characterDuration
                     );
                 }
 
