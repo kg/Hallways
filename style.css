@@ -119,6 +119,10 @@ word, character {
     display: inline-block;
 }
 
+section, p, word {
+    background-color: black;
+}
+
 character.invisible {
     opacity: 0 !important;
 }
@@ -130,8 +134,12 @@ character.invisible {
         opacity: 0.0;
     }
 
-    to {
+    99% {
         transform: scale(1);
+        opacity: 1.0;
+    }
+
+    to {
         opacity: 1.0;
     }
 }
@@ -143,8 +151,12 @@ character.invisible {
         opacity: 0.0;
     }
 
-    to {
+    99% {
         transform: scale(1);
+        opacity: 1.0;
+    }
+
+    to {
         opacity: 1.0;
     }
 }
@@ -167,8 +179,12 @@ character.invisible {
         opacity: 0.0;
     }
 
-    to {
+    99% {
         transform: translate(0px, 0px);
+        opacity: 1.0;
+    }
+
+    to {
         opacity: 1.0;
     }
 }
@@ -218,8 +234,12 @@ character.invisible {
         opacity: 0.0;
     }
 
-    to {
+    99% {
         transform: translate(0px, 0px);
+        opacity: 1.0;
+    }
+
+    to {
         opacity: 1.0;
     }
 }
@@ -240,8 +260,12 @@ character.invisible {
         opacity: 0.0;
     }
 
-    to {
+    99% {
         transform: scale(1);
+        opacity: 1.0;
+    }
+
+    to {
         opacity: 1.0;
     }
 }
@@ -252,8 +276,12 @@ character.invisible {
         opacity: 0.0;
     }
 
-    to {
+    99% {
         transform: scale(1);
+        opacity: 1.0;
+    }
+
+    to {
         opacity: 1.0;
     }
 }
@@ -366,4 +394,10 @@ bottomboundary {
     bottom: 0px;
     height: 140px;
     background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);    
+}
+
+/* webkit layering hack to improve scrolling performance */
+pauseindicator, topboundary, bottomboundary {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
 }

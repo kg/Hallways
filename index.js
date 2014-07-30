@@ -32,6 +32,7 @@ var pauseIndicatorScrollMargin = 220;
 var windowScrollTop = 0;
 var onResizeTimeout = null;
 
+var fontsAreLoaded = false;
 var pausedAtY = null;
 
 var animationQueue = null;
@@ -139,12 +140,14 @@ AnimationQueueEntry.prototype.measure = function () {
 
     var wordNode = this.nodes[0].parentNode;
 
-    this.wordWidth = wordNode.offsetWidth; 
+    this.wordWidth = wordNode.offsetWidth;
     this.wordHeight = wordNode.offsetHeight;
 };
 
 AnimationQueueEntry.prototype.applyWordSize = function () {
     var wordNode = this.nodes[0].parentNode;
+    if (wordNode.nodeName.toLowerCase() !== "word")
+        return;
 
     wordNode.style.width = this.wordWidth.toFixed(3) + "px";
     wordNode.style.height = this.wordHeight.toFixed(3) + "px";
@@ -248,9 +251,11 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     var result = false;
 
     if (self.animationName !== null) {
+        /*
         lastNode.addEventListener("animationend", animationEndHandler, false);
         // fuck chrome
         lastNode.addEventListener("webkitAnimationEnd", animationEndHandler, false);
+        */
 
         var localDelay = 0;
         for (var i = 0, l = self.nodes.length; i < l; i++) {
@@ -401,6 +406,7 @@ function loadFonts (onComplete) {
             console.log("Fonts loaded");
 
             if (!completed) {
+                fontsAreLoaded = true;
                 completed = true;
                 onComplete();
             }
@@ -409,6 +415,7 @@ function loadFonts (onComplete) {
             console.log("Could not load fonts");
             
             if (!completed) {
+                fontsAreLoaded = true;
                 completed = true;
                 onComplete();
             }
@@ -515,7 +522,9 @@ function onResize () {
 
     animationQueue.isInvalid = true;
 
-    onResizeTimeout = setTimeout(animationQueue.boundMeasure, 250);
+    if (fontsAreLoaded) {
+        onResizeTimeout = setTimeout(animationQueue.boundMeasure, 250);
+    }
 };
 
 function enumerateTextNodes (e, output) {
