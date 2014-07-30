@@ -116,41 +116,36 @@ function AnimationQueueEntry (nodes, animationName, finalClassName, characterPau
         throw new Error("First argument must be an array of nodes");
 
     this.nodes = nodes;
-    this.top = null;
-    this.bottom = null;
+    this.rectangle = null;
     this.animationName = animationName;
     this.finalClassName = finalClassName;
     this.characterPause = characterPause;
     this.extraDelay = 0;
     this.isActive = false;
+    this.isWhitespace = false;
+    this.wordNode = null;
 };
 
 AnimationQueueEntry.prototype.measure = function () {
-    var top = 999999;
-    var bottom = 0;
+    var firstNode = this.nodes[0];
 
-    for (var i = 0, l = this.nodes.length; i < l; i++) {
-        var node = this.nodes[i];
-        top = Math.min(top, node.offsetTop);
-        bottom = Math.max(bottom, node.offsetTop + node.offsetHeight);
+    if (firstNode.nodeName.toLowerCase() === "whitespace") {
+        this.wordNode = firstNode;
+        this.isWhitespace = true;
+    } else {
+        this.wordNode = this.nodes[0].parentNode;
+        this.isWhitespace = false;
+
+        if (this.wordNode.nodeName.toLowerCase() !== "word")
+            throw new Error("non-whitespace nodes not contained inside a word node");
     }
 
-    this.top = top;
-    this.bottom = bottom;
-
-    var wordNode = this.nodes[0].parentNode;
-
-    this.wordWidth = wordNode.offsetWidth;
-    this.wordHeight = wordNode.offsetHeight;
+    this.rectangle = this.wordNode.getBoundingClientRect();
 };
 
 AnimationQueueEntry.prototype.applyWordSize = function () {
-    var wordNode = this.nodes[0].parentNode;
-    if (wordNode.nodeName.toLowerCase() !== "word")
-        return;
-
-    wordNode.style.width = this.wordWidth.toFixed(3) + "px";
-    wordNode.style.height = this.wordHeight.toFixed(3) + "px";
+    this.wordNode.style.width = this.rectangle.width.toFixed(4) + "px";
+    this.wordNode.style.height = this.rectangle.height.toFixed(4) + "px";
 };
 
 AnimationQueueEntry.prototype.applyFinalClass = function () {
@@ -202,18 +197,6 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
         onComplete(self);
     }
 
-    function animationEndHandler () {
-        lastNode.removeEventListener("animationend", animationEndHandler, false);
-        lastNode.removeEventListener("webkitAnimationEnd", animationEndHandler, false);
-
-        self.applyFinalClass();
-        // self.mergeCharacters();
-
-        if ((self.characterPause === null) && (self.extraDelay === null)) {
-            fireOnComplete();
-        }
-    };
-
     // !@&%(*!@)
 
     var instantBoundary = windowScrollTop + instantBoundaryHeight;
@@ -221,11 +204,12 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
     var fastBoundary = windowScrollTop + (windowHeight * fastBoundaryPercentage / 100);
     var suspendBoundary = (windowScrollTop + windowHeight) - bottomBoundaryHeight;
 
-    var completeInstantly = self.top <= instantBoundary;
-    var completeVeryFast = self.top <= veryFastBoundary;
-    var completeFast = self.top <= fastBoundary;
-    // FIXME: use self.bottom? Seems too aggressive.
-    var suspend = self.top >= suspendBoundary;
+    var top = self.rectangle.top;
+    var completeInstantly = top <= instantBoundary;
+    var completeVeryFast = top <= veryFastBoundary;
+    var completeFast = top <= fastBoundary;
+    // FIXME: use self.rectangle.bottom? Seems too aggressive.
+    var suspend = top >= suspendBoundary;
 
     var characterPause = self.characterPause;
     if (completeFast)
@@ -250,13 +234,7 @@ AnimationQueueEntry.prototype.activate = function (delayProvider, onComplete) {
 
     var result = false;
 
-    if (self.animationName !== null) {
-        /*
-        lastNode.addEventListener("animationend", animationEndHandler, false);
-        // fuck chrome
-        lastNode.addEventListener("webkitAnimationEnd", animationEndHandler, false);
-        */
-
+    if ((self.animationName !== null) && !this.isWhitespace) {
         var localDelay = 0;
         for (var i = 0, l = self.nodes.length; i < l; i++) {
             var node = self.nodes[i];
@@ -516,9 +494,9 @@ function onResize () {
 
     windowHeight = window.innerHeight;
 
-    var spacerHeight = (windowHeight * topSpacerPercentage / 100);
-    document.querySelector("topspacer").style.height = spacerHeight.toFixed(1) + "px";
-    document.querySelector("bottomspacer").style.height = spacerHeight.toFixed(1) + "px";
+    var spacerHeight = Math.ceil(windowHeight * topSpacerPercentage / 100);
+    document.querySelector("topspacer").style.height = spacerHeight + "px";
+    document.querySelector("bottomspacer").style.height = spacerHeight + "px";
 
     animationQueue.isInvalid = true;
 
