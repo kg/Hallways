@@ -131,12 +131,8 @@ character.invisible {
         opacity: 0.0;
     }
 
-    99% {
-        transform: scale(1);
-        opacity: 1.0;
-    }
-
     to {
+        transform: scale(1);
         opacity: 1.0;
     }
 }
@@ -147,12 +143,8 @@ character.invisible {
         opacity: 0.0;
     }
 
-    99% {
-        transform: scale(1);
-        opacity: 1.0;
-    }
-
     to {
+        transform: scale(1);
         opacity: 1.0;
     }
 }
@@ -173,12 +165,8 @@ character.invisible {
         opacity: 0.0;
     }
 
-    99% {
-        transform: translate(0px, 0px);
-        opacity: 1.0;
-    }
-
     to {
+        transform: translate(0px, 0px);
         opacity: 1.0;
     }
 }
@@ -228,12 +216,8 @@ character.invisible {
         opacity: 0.0;
     }
 
-    99% {
-        transform: translate(0px, 0px);
-        opacity: 1.0;
-    }
-
     to {
+        transform: translate(0px, 0px);
         opacity: 1.0;
     }
 }
@@ -254,12 +238,8 @@ character.invisible {
         opacity: 0.0;
     }
 
-    99% {
-        transform: scale(1);
-        opacity: 1.0;
-    }
-
     to {
+        transform: scale(1);
         opacity: 1.0;
     }
 }
@@ -270,12 +250,8 @@ character.invisible {
         opacity: 0.0;
     }
 
-    99% {
-        transform: scale(1);
-        opacity: 1.0;
-    }
-
     to {
+        transform: scale(1);
         opacity: 1.0;
     }
 }

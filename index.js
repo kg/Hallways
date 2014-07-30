@@ -20,7 +20,8 @@ var animationDurations = {
 var chapterDelay = 2;
 
 var maxRunQuicklyCount = 3;
-var periodicCleanupIntervalMs = 1000;
+var maxPendingCleanups = 4;
+var periodicCleanupIntervalMs = 2500;
 
 var instantBoundaryHeight = 0;
 var veryFastBoundaryHeight = 40;
@@ -74,7 +75,9 @@ DelayProvider.prototype.runQuickly = function (callback) {
 DelayProvider.prototype.cleanupEventually = function (callback) {
     this.periodicCleanupQueue.push(callback);
 
-    if (!this.periodicCleanupPending) {
+    if (this.periodicCleanupQueue.length > maxPendingCleanups) {
+        this.stepPeriodicCleanup();
+    } else if (!this.periodicCleanupPending) {
         this.periodicCleanupPending = true;
         setTimeout(this.boundStepPeriodicCleanup, periodicCleanupIntervalMs);
     }
@@ -212,8 +215,8 @@ AnimationQueueWordEntry.prototype.cleanup = function () {
     if (this.animationName === null)
         return;
 
-    /*
     // strip animation styles
+    // slower, more complicated
     for (var i = 0, l = this.nodes.length; i < l; i++) {
         var node = this.nodes[i];
 
@@ -222,10 +225,13 @@ AnimationQueueWordEntry.prototype.cleanup = function () {
         node.style.webkitAnimationDelay = node.style.animationDelay = "";
         node.style.webkitAnimationDuration = node.style.animationDuration = "";
     }
-    */
 
+    /*
     // Replace characters with a single text node.
+    // Simplifies the dom (faster layout)
+    // Makes layout glitch because this causes kerning and ligatures to turn on. Ugh.
     this.wordNode.textContent = this.wordNode.textContent;
+    */
 };
 
 AnimationQueueWordEntry.prototype.activate = function (delayProvider, onComplete) {
