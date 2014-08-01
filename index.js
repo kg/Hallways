@@ -1,3 +1,8 @@
+// TODO: Schedule words using a periodic setInterval/requestAnimationFrame timer
+//  Schedule multiple words in advance as one block, using animation-delay, so
+//   that we can go without running for like ~1000ms without glitching.
+//  Don't schedule too much since that stops us from adjusting scroll speed.
+
 var characterDuration = 0.032;
 var whitespaceDuration = 0.065;
 var successiveWhitespaceDuration = 0.03;
