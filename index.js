@@ -3,6 +3,13 @@
 //   that we can go without running for like ~1000ms without glitching.
 //  Don't schedule too much since that stops us from adjusting scroll speed.
 
+// Virtual 'cursor' that floats around the middle of the screen, 
+//  represented by actual scroll position?
+// Override actual scroll position by using an overlaid scrolling
+//  div that gets user scroll events, then feed input from that
+//  into text speed algorithm - scroll down to accelerate, up to
+//  decelerate?
+
 var characterDuration = 0.032;
 var whitespaceDuration = 0.065;
 var successiveWhitespaceDuration = 0.03;
