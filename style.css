@@ -5,7 +5,7 @@ html, body {
 }
 
 /* repaint/layout optimization: making blocks opaque limits damage from animations/style changes */
-body, story, section, p, word {
+body, section, p, page, word {
     background-color: rgb(12, 18, 20);
 }
 
@@ -29,11 +29,11 @@ h3 {
     font-size: 2em;
 }
 
-section, chapter {
+section, page {
     display: block;
 }
 
-chapter {
+section {
     max-width: 1000px;
     width: 90%;
     margin-left: auto;
@@ -52,22 +52,6 @@ chapter {
 
     padding-top: 2.1em;
     padding-bottom: 2.1em;
-}
-
-chapter.first {
-    padding-top: 0.4em !important;
-}
-
-chapter.last {
-    padding-bottom: 0.33em !important;
-}
-
-section {
-    margin-bottom: 1.66em;
-}
-
-section.last {
-    margin-bottom: 0em !important;
 }
 
 .dream {
@@ -106,9 +90,6 @@ span.green {
 
 span.red {
     color: rgb(205, 25, 45);
-}
-
-section p {
 }
 
 whitespace {
@@ -256,66 +237,8 @@ character.invisible {
     }
 }
 
-topspacer, bottomspacer {
-    display: block;
-    width: 100%;
-    min-height: 32px;
-}
-
-footer {
-    display: block;
-    width: 100%;
-    font-size: 0.9em;
-    color: rgb(150, 190, 180);
-    font-style: italic;
-    text-align: center;
-    padding-top: 120px;
-    padding-bottom: 120px;
-}
-
 story {
-    display: block;
-    opacity: 1;
-
-    -webkit-transition: opacity 1s;
-    transition: opacity 1s;
-}
-
-story.loading {
     display: none;
-    opacity: 0;
-}
-
-story.invisible {
-    opacity: 0;
-}
-
-pauseindicator {
-    display: block;
-    position: fixed;
-    z-index: 9999;
-
-    bottom: 2em;
-    right: 2em;
-    padding: 24px;
-
-    background-color: rgba(0, 0, 0, 0.9);
-    border-radius: 16px;
-    color: white;
-    font-weight: bold;
-    font-size: 1.1em;
-    text-align: right;
-
-    -webkit-transition: opacity 0.66s;
-    transition: opacity 0.66s;
-}
-
-pauseindicator.paused {
-    opacity: 1;
-}
-
-pauseindicator.unpaused {
-    opacity: 0;
 }
 
 loadingindicator {
@@ -344,46 +267,4 @@ loadingindicator {
 
 loadingindicator.invisible {
     opacity: 0;
-}
-
-topboundary, bottomboundary {
-    display: block;
-    position: fixed;
-    left: 0px;
-    right: 0px;
-    z-index: 9000;
-}
-
-topboundary {
-    top: 0px;
-    height: 60px;
-    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);    
-}
-
-bottomboundary {
-    bottom: 0px;
-    height: 140px;
-    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);    
-}
-
-/* webkit layering hack to improve scrolling performance */
-pauseindicator, topboundary, bottomboundary, scrollcursor {
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-}
-
-scrollcursor {
-    display: block;
-    position: fixed;
-    left: 0px;
-    right: 0px;
-    top: 50%;
-    height: 0px;
-    background-color: white;
-    border-radius: 4px;
-    border-width: 2px;
-    border-color: white;
-    border-style: solid;
-    z-index: 8900;
-    opacity: 0.1;
 }

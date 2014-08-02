@@ -3,12 +3,6 @@
 //   that we can go without running for like ~1000ms without glitching.
 //  Don't schedule too much since that stops us from adjusting scroll speed.
 
-// Virtual 'cursor' that floats around the middle of the screen, 
-//  represented by actual scroll position?
-// Override actual scroll position by using an overlaid scrolling
-//  div that gets user scroll events, then feed input from that
-//  into text speed algorithm - scroll down to accelerate, up to
-//  decelerate?
 
 var characterDuration = 0.032;
 var whitespaceDuration = 0.065;
@@ -29,7 +23,7 @@ var animationDurations = {
     "blurry-fade-in": 0.410
 };
 
-var chapterDelay = 2;
+var sectionDelay = 2;
 
 var maxRunQuicklyCount = 3;
 var maxPendingCleanups = 4;
@@ -39,7 +33,6 @@ var instantBoundaryHeight = 0;
 var veryFastBoundaryHeight = 40;
 var fastBoundaryPercentage = 25;
 var bottomBoundaryHeight = 140;
-var topSpacerPercentage = 15;
 var pauseIndicatorScrollMargin = 220;
 
 // The fuck, chrome?
@@ -479,9 +472,9 @@ function loadFonts (onComplete) {
 
 function prepareStory (onComplete) {
     console.log("Preparing story layout");
-    var chapters = document.querySelectorAll("chapter");
+    var sections = document.querySelectorAll("section");
 
-    var i = 0, l = chapters.length;
+    var i = 0, l = sections.length;
 
     function step () {
         if (i >= l) {
@@ -489,28 +482,30 @@ function prepareStory (onComplete) {
             return;
         }
 
-        console.log("Laying out chapter " + i);
+        console.log("Laying out section " + i);
 
-        var chapter = chapters[i];
-        var sections = chapter.querySelectorAll("section");
+        var section = sections[i];
+        var pages = section.querySelectorAll("page");
 
-        for (var i2 = 0, l2 = sections.length; i2 < l2; i2++) {
-            var section = sections[i2];
-            var paragraphs = section.querySelectorAll("p");
+        for (var i2 = 0, l2 = pages.length; i2 < l2; i2++) {
+            var page = pages[i2];
+            var children = page.children;
 
-            for (var i3 = 0, l3 = paragraphs.length; i3 < l3; i3++) {
-                var p = paragraphs[i3];
+            for (var i3 = 0, l3 = children.length; i3 < l3; i3++) {
+                var elt = children[i3];
+                if (elt.nodeType === Node.TEXT_NODE)
+                    continue;
 
-                spanifyCharacters(p, animationQueue);
+                spanifyCharacters(elt, animationQueue);
 
-                trimWhitespace(p);
+                trimWhitespace(elt);
             }
         }
 
-        // HACK: Insert delay at end of chapter
+        // HACK: Insert delay at end of section
         var lastEntry = animationQueue.queue[animationQueue.queue.length - 1];
         if (lastEntry) {
-            lastEntry.extraDelay += chapterDelay;
+            lastEntry.extraDelay += sectionDelay;
         }
 
         i += 1;
@@ -563,10 +558,6 @@ function onResize () {
 
     windowHeight = window.innerHeight;
 
-    var spacerHeight = Math.ceil(windowHeight * topSpacerPercentage / 100);
-    document.querySelector("topspacer").style.height = spacerHeight + "px";
-    document.querySelector("bottomspacer").style.height = spacerHeight + "px";
-
     animationQueue.isInvalid = true;
 
     if (fontsAreLoaded) {
@@ -607,6 +598,9 @@ function enumerateTextNodes (e, output) {
 };
 
 function trimWhitespace (e) {
+    if (!(e.firstChild))
+        return;
+
     if (e.firstChild.className === "whitespace") {
         e.removeChild(e.firstChild);
     }
